@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.msa.auth.mapper.AuthUserMapper">
+    <select id="selectAll" resultType="com.msa.auth.vo.AuthUserVo">
+        select id, user_id as userId, user_name as userName, password_hash as passwordHash, status
+        from auth_user
+        order by id desc
+    </select>
+
+    <insert id="insert" parameterType="com.msa.auth.vo.AuthUserVo" useGeneratedKeys="true" keyProperty="id">
+        insert into auth_user (user_id, user_name, password_hash, status)
+        values (#{userId}, #{userName}, #{passwordHash}, #{status})
+    </insert>
+
+    <insert id="insertTraceEvent" parameterType="com.msa.core.TraceEventVo" useGeneratedKeys="true" keyProperty="id">
+        insert into trace_event
+        (trace_id, process_id, business_key, process_type, step_id, service_name, event_type, http_method, path, status, elapsed_ms, error_code, error_message, created_at)
+        values
+        (#{traceId}, #{processId}, #{businessKey}, #{processType}, #{stepId}, #{serviceName}, #{eventType}, #{httpMethod}, #{path}, #{status}, #{elapsedMs}, #{errorCode}, #{errorMessage}, #{createdAt})
+    </insert>
+</mapper>

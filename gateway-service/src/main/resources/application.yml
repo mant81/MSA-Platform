@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: gateway-service
+  datasource:
+    url: jdbc:h2:mem:gatewaydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+  cloud:
+    gateway:
+      routes:
+        - id: config-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/configs/**
+        - id: auth-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/users/**
+        - id: member-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/members/**
+
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+app:
+  datasource-url: jdbc:h2:mem:gatewaydb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+  datasource-driver: org.h2.Driver
+  datasource-username: sa
+  datasource-password:
+  trace-service-url: http://localhost:8090
+
+server:
+  port: 8080

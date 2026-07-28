@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.msa.member.mapper.MemberMapper">
+    <select id="selectAll" resultType="com.msa.member.vo.MemberVo">
+        select id, member_no as memberNo, member_name as memberName, status
+        from member
+        order by id desc
+    </select>
+
+    <select id="selectByMemberNo" parameterType="string" resultType="com.msa.member.vo.MemberVo">
+        select id, member_no as memberNo, member_name as memberName, status
+        from member
+        where member_no = #{memberNo}
+    </select>
+
+    <insert id="insert" parameterType="com.msa.member.vo.MemberVo" useGeneratedKeys="true" keyProperty="id">
+        insert into member (member_no, member_name, status)
+        values (#{memberNo}, #{memberName}, #{status})
+    </insert>
+
+    <insert id="insertProcess" parameterType="com.msa.member.vo.MemberProcessVo" useGeneratedKeys="true" keyProperty="id">
+        insert into member_process
+        (process_id, process_type, process_name, business_key, trace_id, status, start_time, end_time, elapsed_ms, error_code, error_type, error_message)
+        values
+        (#{processId}, #{processType}, #{processName}, #{businessKey}, #{traceId}, #{status}, #{startTime}, #{endTime}, #{elapsedMs}, #{errorCode}, #{errorType}, #{errorMessage})
+    </insert>
+
+    <update id="updateProcess" parameterType="com.msa.member.vo.MemberProcessVo">
+        update member_process
+        set status = #{status},
+            end_time = #{endTime},
+            elapsed_ms = #{elapsedMs},
+            error_code = #{errorCode},
+            error_type = #{errorType},
+            error_message = #{errorMessage}
+        where process_id = #{processId}
+    </update>
+
+    <select id="selectProcesses" resultType="com.msa.member.vo.MemberProcessVo">
+        select id, process_id as processId, process_type as processType, process_name as processName,
+               business_key as businessKey, trace_id as traceId, status, start_time as startTime,
+               end_time as endTime, elapsed_ms as elapsedMs, error_code as errorCode,
+               error_type as errorType, error_message as errorMessage
+        from member_process
+        order by id desc
+    </select>
+
+    <select id="selectProcess" parameterType="string" resultType="com.msa.member.vo.MemberProcessVo">
+        select id, process_id as processId, process_type as processType, process_name as processName,
+               business_key as businessKey, trace_id as traceId, status, start_time as startTime,
+               end_time as endTime, elapsed_ms as elapsedMs, error_code as errorCode,
+               error_type as errorType, error_message as errorMessage
+        from member_process
+        where process_id = #{processId}
+    </select>
+
+    <insert id="insertProcessStep" parameterType="com.msa.member.vo.MemberProcessStepVo" useGeneratedKeys="true" keyProperty="id">
+        insert into member_process_step
+        (process_id, step_id, step_name, service_name, status, start_time, end_time, elapsed_ms, error_code, error_type, error_message)
+        values
+        (#{processId}, #{stepId}, #{stepName}, #{serviceName}, #{status}, #{startTime}, #{endTime}, #{elapsedMs}, #{errorCode}, #{errorType}, #{errorMessage})
+    </insert>
+
+    <update id="updateProcessStep" parameterType="com.msa.member.vo.MemberProcessStepVo">
+        update member_process_step
+        set status = #{status},
+            end_time = #{endTime},
+            elapsed_ms = #{elapsedMs},
+            error_code = #{errorCode},
+            error_type = #{errorType},
+            error_message = #{errorMessage}
+        where process_id = #{processId}
+          and step_id = #{stepId}
+    </update>
+
+    <select id="selectProcessSteps" parameterType="string" resultType="com.msa.member.vo.MemberProcessStepVo">
+        select id, process_id as processId, step_id as stepId, step_name as stepName,
+               service_name as serviceName, status, start_time as startTime, end_time as endTime,
+               elapsed_ms as elapsedMs, error_code as errorCode, error_type as errorType,
+               error_message as errorMessage
+        from member_process_step
+        where process_id = #{processId}
+        order by id asc
+    </select>
+
+    <insert id="insertProcessEvent" parameterType="com.msa.member.vo.MemberProcessEventVo" useGeneratedKeys="true" keyProperty="id">
+        insert into member_process_event
+        (process_id, step_id, event_type, event_time, service_name, message, status)
+        values
+        (#{processId}, #{stepId}, #{eventType}, #{eventTime}, #{serviceName}, #{message}, #{status})
+    </insert>
+
+    <select id="selectProcessTimeline" parameterType="string" resultType="com.msa.member.vo.MemberProcessEventVo">
+        select id, process_id as processId, step_id as stepId, event_type as eventType,
+               event_time as eventTime, service_name as serviceName, message, status
+        from member_process_event
+        where process_id = #{processId}
+        order by event_time asc, id asc
+    </select>
+
+    <insert id="insertTraceEvent" parameterType="com.msa.core.TraceEventVo" useGeneratedKeys="true" keyProperty="id">
+        insert into trace_event
+        (trace_id, process_id, business_key, process_type, step_id, service_name, event_type, http_method, path, status, elapsed_ms, error_code, error_message, created_at)
+        values
+        (#{traceId}, #{processId}, #{businessKey}, #{processType}, #{stepId}, #{serviceName}, #{eventType}, #{httpMethod}, #{path}, #{status}, #{elapsedMs}, #{errorCode}, #{errorMessage}, #{createdAt})
+    </insert>
+</mapper>

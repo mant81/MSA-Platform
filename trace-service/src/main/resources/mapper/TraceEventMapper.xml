@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.msa.trace.mapper.TraceEventMapper">
+    <insert id="insert" parameterType="com.msa.core.TraceEventVo" useGeneratedKeys="true" keyProperty="id">
+        insert into trace_event
+        (trace_id, process_id, business_key, process_type, step_id, service_name, event_type, http_method, path, status, elapsed_ms, error_code, error_message, created_at)
+        values
+        (#{traceId}, #{processId}, #{businessKey}, #{processType}, #{stepId}, #{serviceName}, #{eventType}, #{httpMethod}, #{path}, #{status}, #{elapsedMs}, #{errorCode}, #{errorMessage}, #{createdAt})
+    </insert>
+
+    <select id="selectAll" resultType="com.msa.core.TraceEventVo">
+        select id, trace_id as traceId, process_id as processId, business_key as businessKey,
+               process_type as processType, step_id as stepId, service_name as serviceName,
+               event_type as eventType, http_method as httpMethod, path, status,
+               elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
+               created_at as createdAt
+        from trace_event
+        order by id desc
+    </select>
+
+    <select id="selectByTraceId" parameterType="string" resultType="com.msa.core.TraceEventVo">
+        select id, trace_id as traceId, process_id as processId, business_key as businessKey,
+               process_type as processType, step_id as stepId, service_name as serviceName,
+               event_type as eventType, http_method as httpMethod, path, status,
+               elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
+               created_at as createdAt
+        from trace_event
+        where trace_id = #{traceId}
+        order by id asc
+    </select>
+
+    <select id="selectByProcessId" parameterType="string" resultType="com.msa.core.TraceEventVo">
+        select id, trace_id as traceId, process_id as processId, business_key as businessKey,
+               process_type as processType, step_id as stepId, service_name as serviceName,
+               event_type as eventType, http_method as httpMethod, path, status,
+               elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
+               created_at as createdAt
+        from trace_event
+        where process_id = #{processId}
+        order by id asc
+    </select>
+
+    <select id="selectByProcessIdAndTraceId" resultType="com.msa.core.TraceEventVo">
+        select id, trace_id as traceId, process_id as processId, business_key as businessKey,
+               process_type as processType, step_id as stepId, service_name as serviceName,
+               event_type as eventType, http_method as httpMethod, path, status,
+               elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
+               created_at as createdAt
+        from trace_event
+        where process_id = #{param1}
+          and trace_id = #{param2}
+        order by id asc
+    </select>
+
+    <select id="selectByStatus" parameterType="string" resultType="com.msa.core.TraceEventVo">
+        select id, trace_id as traceId, process_id as processId, business_key as businessKey,
+               process_type as processType, step_id as stepId, service_name as serviceName,
+               event_type as eventType, http_method as httpMethod, path, status,
+               elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
+               created_at as createdAt
+        from trace_event
+        where status = #{status}
+        order by id asc
+    </select>
+</mapper>

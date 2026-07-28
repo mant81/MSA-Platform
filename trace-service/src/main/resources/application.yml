@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:tracedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+
+app:
+  database-type: H2
+  datasource-url: jdbc:h2:mem:tracedb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+  datasource-driver: org.h2.Driver
+  datasource-username: sa
+  datasource-password:
+
+server:
+  port: 8090
