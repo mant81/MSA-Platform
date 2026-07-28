@@ -6,9 +6,20 @@ MSA PLATFORM is a small Spring Boot 3 + Java 21 + Gradle based platform for trac
 - `gateway-service`
 - `trace-service`
 - `member-service`
+- `hr-service`
 - `auth-service`
 - `config-service`
+- `test-service`
 - `msa-core`
+
+## Test service purpose
+- `test-service` is for MSA backend integration testing.
+- It is a Thymeleaf-based UI test app, not a business domain service.
+- Use it to verify Gateway routing, trace propagation, and service-specific API behavior through Ajax.
+- It does not need DB integration.
+- Keep it simple and disposable.
+- It is organized by service purpose: `member`, `auth`, `config`, `trace`, `gateway`.
+- The backend endpoint for test flows is always `gateway-service`.
 
 ## Shared rules
 - Use `com.msa` as the base package.
@@ -36,6 +47,13 @@ Examples:
 - `gateway-service -> auth-service`
 - `member-service -> auth-service`
 - `member-service -> config-service`
+- `member-service -> hr-service`
+
+### hr-service purpose
+- `hr-service` is fully standalone.
+- HR response format is independent from other services.
+- Other services should only consume the HR response contract through their own mapping.
+- HR is used as the employee verification source for member signup trace flow.
 
 Rules:
 - Use for service-to-service business calls inside the platform.
@@ -102,11 +120,64 @@ Rules:
 - `com.msa.member.service`
   - business orchestration and trace recording
 
+### auth-service expansion model
+- `com.msa.auth.auth.strategy`
+  - auth type handlers by strategy
+- `com.msa.auth.auth.dto`
+  - login request and response objects
+- `com.msa.auth.auth.token`
+  - JWT token creation
+- `com.msa.auth.controller.AuthLoginController`
+  - login entry point
+- Supported auth types should grow in this order:
+  - `PASSWORD`
+  - `OTP`
+  - `SOCIAL`
+  - `MFA`
+  - `SSO`
+- Sample flow:
+  - `POST /auth/signup` creates a user and returns JWT tokens
+  - `POST /auth/login` authenticates by `authType` and returns JWT tokens
+  - signup data is stored in H2 memory DB
+  - login reads the same H2 memory DB
+  - restarting the service clears the H2 memory DB, so users must sign up again
+
+### test-service package layout
+- `com.msa.test.controller`
+  - UI page controller and Gateway proxy API
+- `src/main/resources/templates`
+  - Thymeleaf pages
+- `src/main/resources/static`
+  - JavaScript and CSS assets
+- No `service`, `mapper`, `xml`, or DB config is required.
+
+### test-service purpose mapping
+- `Member Service`
+  - member signup and member flow verification through Gateway
+- `Auth Service`
+  - auth flow verification through Gateway
+- `Config Service`
+  - config lookup verification through Gateway
+- `Trace Service`
+  - trace list and trace lookup verification through Gateway
+- `Gateway Service`
+  - gateway health and routing verification
+
 ### member-service examples
 - `AuthUserFeignClient`
   - internal service call example
 - `EligibilityRestClient`
   - external API call example
+- `HrEmployeeFeignClient`
+  - internal HR verification example
+
+### auth-service examples
+- `AuthStrategy`
+  - common authentication contract
+- `PasswordAuthStrategy`
+  - ID/PW login example
+- `JwtTokenService`
+  - token creation example
 
 ### Standard wording
 - Internal call means a platform-owned service-to-service call.
@@ -126,6 +197,7 @@ Rules:
 - Gateway routes to service URLs configured in `gateway-service/src/main/resources/application.yml`.
 - Gateway always adds `X-Trace-Id` to the response header.
 - Gateway error responses also include `X-Trace-Id`.
+- Gateway filters protected routes by `Authorization: Bearer <JWT>`.
 
 ## Service run order
 Run `trace-service` first, then `gateway-service`, then the business services.
@@ -134,7 +206,9 @@ Run `trace-service` first, then `gateway-service`, then the business services.
 2. `gateway-service`
 3. `config-service`
 4. `auth-service`
-5. `member-service`
+5. `hr-service`
+6. `member-service`
+7. `test-service`
 
 ## Default ports
 - `gateway-service`: `8080`
@@ -142,6 +216,8 @@ Run `trace-service` first, then `gateway-service`, then the business services.
 - `config-service`: `8081`
 - `auth-service`: `8082`
 - `member-service`: `8083`
+- `hr-service`: `8084`
+- `test-service`: `8099`
 
 ## How to run
 Open one terminal per service folder and run:
@@ -187,7 +263,25 @@ cd member-service
 gradlew bootRun
 ```
 
+Start `hr-service`:
+```bash
+cd hr-service
+gradlew bootRun
+```
+
+Start `test-service`:
+```bash
+cd test-service
+gradlew bootRun
+```
+
 ## Member signup
+Sample signup flow:
+- `member-service` calls `hr-service` first
+- if the employee is active, signup continues
+- the trace shows HR check success or failure
+- `hr-service` is independent and can be deployed or replaced separately
+
 ### Request
 `POST /members/signup`
 

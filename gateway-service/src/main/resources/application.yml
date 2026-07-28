@@ -19,11 +19,15 @@ spring:
         - id: auth-service
           uri: http://localhost:8082
           predicates:
-            - Path=/users/**
+            - Path=/auth/**,/users/**
         - id: member-service
           uri: http://localhost:8083
           predicates:
             - Path=/members/**
+        - id: hr-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/hr/**
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml

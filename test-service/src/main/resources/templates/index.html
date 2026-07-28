@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MSA Service Test UI</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<main class="wrap">
+    <section class="hero">
+        <div class="eyebrow">MSA Backend Test UI</div>
+        <h1>서비스 목적별 테스트 화면</h1>
+        <p>Gateway 경유 흐름과 각 서비스의 실제 응답을 그대로 확인하는 UI입니다.</p>
+    </section>
+
+    <section class="grid">
+        <article class="card">
+            <div class="card-head">
+                <h2>Gateway Service</h2>
+                <span>Route check</span>
+            </div>
+            <div class="actions">
+                <button id="btn-gateway-members">/members</button>
+                <button id="btn-gateway-auth">/auth/login</button>
+                <button id="btn-gateway-configs">/configs</button>
+            </div>
+            <pre id="gateway-result"></pre>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h2>HR Service</h2>
+                <span>직원 확인</span>
+            </div>
+            <div class="actions">
+                <button id="btn-hr-active-1">EMPLOYEE-10001</button>
+                <button id="btn-hr-active-2">EMPLOYEE-10003</button>
+                <button id="btn-hr-inactive-1">EMPLOYEE-10002</button>
+                <button id="btn-hr-inactive-2">EMPLOYEE-10005</button>
+            </div>
+            <div class="actions">
+                <button id="btn-hr-select">HR 조회</button>
+            </div>
+            <pre id="hr-result"></pre>
+        </article>
+    </section>
+
+    <section class="grid">
+        <article class="card">
+            <div class="card-head">
+                <h2>Member Service</h2>
+                <span>회원/프로세스</span>
+            </div>
+            <div class="form">
+                <label>회원번호</label>
+                <input id="member-no" value="EMPLOYEE-10001">
+                <label>이름</label>
+                <input id="member-name" value="홍길동">
+                <label>상태</label>
+                <input id="member-status" value="ACTIVE">
+                <div class="actions">
+                    <button id="btn-member-select-all">전체 조회</button>
+                    <button id="btn-member-select-one">단건 조회</button>
+                    <button id="btn-member-insert">입력</button>
+                    <button id="btn-member-signup">회원가입</button>
+                </div>
+                <div class="actions">
+                    <button id="btn-member-processes">프로세스 목록</button>
+                    <button id="btn-member-timeline">타임라인</button>
+                </div>
+            </div>
+            <pre id="member-result"></pre>
+        </article>
+    </section>
+
+    <section class="grid">
+        <article class="card">
+            <div class="card-head">
+                <h2>Auth Service</h2>
+                <span>회원가입 / 로그인</span>
+            </div>
+            <div class="form">
+                <label>사용자ID</label>
+                <input id="auth-user-id" value="user01">
+                <label>사용자명</label>
+                <input id="auth-user-name" value="테스트사용자">
+                <label>Password</label>
+                <input id="auth-password" value="1234" type="password">
+                <label>Auth Type</label>
+                <input id="auth-type" value="PASSWORD">
+                <div class="actions">
+                    <button id="btn-auth-signup">회원가입</button>
+                    <button id="btn-auth-login">로그인</button>
+                </div>
+            </div>
+            <pre id="auth-result"></pre>
+            <pre id="token-result"></pre>
+        </article>
+
+        <article class="card">
+            <div class="card-head">
+                <h2>Config Service</h2>
+                <span>설정 관리</span>
+            </div>
+            <div class="form">
+                <label>설정키</label>
+                <input id="config-key" value="app.name">
+                <label>설정값</label>
+                <input id="config-value" value="MSA PLATFORM">
+                <div class="actions">
+                    <button id="btn-config-select-all">전체 조회</button>
+                    <button id="btn-config-insert">입력</button>
+                </div>
+            </div>
+            <pre id="config-result"></pre>
+        </article>
+    </section>
+
+    <section class="grid">
+        <article class="card full">
+            <div class="card-head">
+                <h2>Trace Service</h2>
+                <span>trace 조회</span>
+            </div>
+            <div class="form">
+                <label>Trace ID</label>
+                <input id="trace-id" value="">
+                <label>Process ID</label>
+                <input id="process-id" value="">
+                <label>Status</label>
+                <input id="trace-status" value="">
+                <div class="actions">
+                    <button id="btn-trace-all">전체 조회</button>
+                    <button id="btn-trace-by-trace-id">Trace ID 조회</button>
+                    <button id="btn-trace-by-process-id">Process ID 조회</button>
+                    <button id="btn-trace-by-status">Status 조회</button>
+                    <button id="btn-trace-by-both">Process + Trace 조회</button>
+                </div>
+            </div>
+            <pre id="trace-result"></pre>
+        </article>
+    </section>
+</main>
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

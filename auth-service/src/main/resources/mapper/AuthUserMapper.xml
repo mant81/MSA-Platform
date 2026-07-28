@@ -9,6 +9,12 @@
         order by id desc
     </select>
 
+    <select id="selectByUserId" parameterType="string" resultType="com.msa.auth.vo.AuthUserVo">
+        select id, user_id as userId, user_name as userName, password_hash as passwordHash, status
+        from auth_user
+        where user_id = #{userId}
+    </select>
+
     <insert id="insert" parameterType="com.msa.auth.vo.AuthUserVo" useGeneratedKeys="true" keyProperty="id">
         insert into auth_user (user_id, user_name, password_hash, status)
         values (#{userId}, #{userName}, #{passwordHash}, #{status})

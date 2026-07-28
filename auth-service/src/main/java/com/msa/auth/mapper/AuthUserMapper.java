@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface AuthUserMapper {
     List<AuthUserVo> selectAll();
+    AuthUserVo selectByUserId(String userId);
     int insert(AuthUserVo vo);
     int insertTraceEvent(TraceEventVo vo);
 }

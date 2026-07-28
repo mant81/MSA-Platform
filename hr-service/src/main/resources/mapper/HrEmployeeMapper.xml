@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.msa.hr.mapper.HrEmployeeMapper">
+
+    <select id="selectAll" resultType="com.msa.hr.vo.HrEmployeeVo">
+        select id, employee_no as employeeNo, employee_name as employeeName, status
+        from hr_employee
+        order by id
+    </select>
+
+    <select id="selectByEmployeeNo" parameterType="string" resultType="com.msa.hr.vo.HrEmployeeVo">
+        select id, employee_no as employeeNo, employee_name as employeeName, status
+        from hr_employee
+        where employee_no = #{employeeNo}
+    </select>
+
+</mapper>

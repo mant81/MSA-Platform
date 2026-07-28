@@ -20,4 +20,19 @@ public class AuthUserService {
     public int insert(AuthUserVo vo) {
         return authUserMapper.insert(vo);
     }
+
+    public AuthUserVo selectByUserId(String userId) {
+        return authUserMapper.selectByUserId(userId);
+    }
+
+    public AuthUserVo selectByUserIdAndPassword(String userId, String password) {
+        AuthUserVo vo = authUserMapper.selectByUserId(userId);
+        if (vo == null) {
+            return null;
+        }
+        if (password == null || !password.equals(vo.getPasswordHash())) {
+            return null;
+        }
+        return vo;
+    }
 }
