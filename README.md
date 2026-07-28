@@ -1,8 +1,8 @@
 # MSA PLATFORM
 
-MSA PLATFORM is a small Spring Boot 3 + Java 21 + Gradle based platform for trace-aware microservices.
+MSA PLATFORM은 Spring Boot 3, Java 21, Gradle 기반의 트레이스 중심 MSA 샘플 플랫폼입니다.
 
-## What this platform contains
+## 구성 서비스
 - `gateway-service`
 - `trace-service`
 - `member-service`
@@ -12,280 +12,180 @@ MSA PLATFORM is a small Spring Boot 3 + Java 21 + Gradle based platform for trac
 - `test-service`
 - `msa-core`
 
-## Test service purpose
-- `test-service` is for MSA backend integration testing.
-- It is a Thymeleaf-based UI test app, not a business domain service.
-- Use it to verify Gateway routing, trace propagation, and service-specific API behavior through Ajax.
-- It does not need DB integration.
-- Keep it simple and disposable.
-- It is organized by service purpose: `member`, `auth`, `config`, `trace`, `gateway`.
-- The backend endpoint for test flows is always `gateway-service`.
+## 서비스 목적
+- `gateway-service`
+  - 전체 백엔드의 진입점입니다.
+  - 요청 라우팅, `X-Trace-Id` 전파, JWT 필터링을 담당합니다.
+- `trace-service`
+  - 모든 trace를 중앙 저장합니다.
+  - trace 조회 API를 제공합니다.
+- `member-service`
+  - 회원가입과 회원 프로세스 흐름을 담당합니다.
+  - 회원가입 시 `hr-service`를 먼저 호출해 정상 직원인지 확인합니다.
+- `hr-service`
+  - HR 시스템 예시입니다.
+  - 직원 여부 확인 전용의 독립 서비스입니다.
+  - 다른 시스템과 포맷이 달라도 되도록 별도 계약으로 분리합니다.
+- `auth-service`
+  - 회원가입과 로그인, JWT 발급을 담당합니다.
+  - H2 메모리 DB에 실제 저장하고 조회합니다.
+  - 서비스 재시작 시 데이터가 초기화되므로 다시 가입해야 합니다.
+- `config-service`
+  - 설정 조회와 설정 저장을 담당합니다.
+- `test-service`
+  - MSA 백엔드 테스트용 Thymeleaf UI입니다.
+  - 모든 백엔드 호출은 `gateway-service`를 통해서만 수행합니다.
+- `msa-core`
+  - 공통 규약, 응답, 예외, 트레이스 모델을 담는 공유 jar입니다.
 
-## Shared rules
-- Use `com.msa` as the base package.
-- Use `select*` for reads.
-- Use `insert` for writes.
-- Keep service code simple: `controller`, `service`, `mapper`, `xml`, `vo`.
-- Do not add DTOs unless explicitly requested.
-- Default database is H2.
-- DB type is selected per service by `app.database-type`.
+## 공통 규칙
+- 기본 패키지는 `com.msa`를 사용합니다.
+- 조회는 `select*` 이름을 사용합니다.
+- 저장은 `insert` 이름을 사용합니다.
+- 코드는 단순하게 유지합니다.
+- DTO는 요청이 없으면 추가하지 않습니다.
+- 기본 DB는 H2입니다.
+- DB 종류는 서비스별 설정 `app.database-type`으로 선택합니다.
 
-## Trace rules
-- `X-Trace-Id` is mandatory on every request and response.
-- If a request does not include `X-Trace-Id`, Gateway generates one.
-- Gateway forwards the same `X-Trace-Id` downstream.
-- Downstream services echo `X-Trace-Id` in the response header.
-- All trace events are stored centrally in `trace-service`.
+## 개발 방식
+이 프로젝트는 `D:\ai\my_harness` 가이드의 원칙을 따릅니다.
 
-## Call boundary definitions
+### 기본 원칙
+- 요구사항을 먼저 좁게 정의하고, 필요한 것만 만듭니다.
+- 불필요한 추상화, 과도한 확장성, 미리 넣는 범용 구조는 만들지 않습니다.
+- 구조 변경과 기능 변경은 가능하면 분리합니다.
+- 변경한 내용은 요청과 직접 연결되어야 합니다.
+- 기존에 잘 동작하는 코드는 함부로 손대지 않습니다.
 
-### Internal call
-Internal call means a call between platform services that are owned and deployed as part of this MSA.
+### 작업 순서
+1. 요구사항과 현재 구조를 먼저 확인합니다.
+2. 필요한 파일만 최소 범위로 수정합니다.
+3. 가능한 경우 단순한 예시부터 먼저 만듭니다.
+4. 기능이 있으면 검증 가능한 흐름을 우선 추가합니다.
+5. 문서와 코드가 서로 다르면 같이 맞춥니다.
 
-Examples:
+### 검증 원칙
+- 코드 변경이 있으면 동작 확인 기준도 같이 둡니다.
+- 테스트 가능한 로직은 실패 케이스와 성공 케이스를 구분합니다.
+- UI나 문서 작업처럼 테스트가 과한 경우에는 목표 달성 여부를 기준으로 확인합니다.
+- 한 번에 너무 많은 변화를 넣지 않습니다.
+
+### 하네스 기준 반영
+- 에이전트식 작업 방식은 `목표 → 최소 변경 → 검증 → 정리` 순서로 진행합니다.
+- 구조 변경과 동작 변경이 섞이면 먼저 구조를 정리한 뒤 기능을 넣습니다.
+- 새 의존성은 꼭 필요할 때만 추가합니다.
+- 공통 규칙은 `msa-core`에 두고, 서비스별 동작은 각 서비스에서 처리합니다.
+
+## Trace 규칙
+- 모든 요청과 응답에는 `X-Trace-Id`가 있어야 합니다.
+- 요청에 `X-Trace-Id`가 없으면 Gateway가 생성합니다.
+- Gateway는 같은 `X-Trace-Id`를 downstream으로 전달합니다.
+- downstream 서비스도 응답 헤더에 `X-Trace-Id`를 다시 실어줍니다.
+- 모든 trace는 `trace-service`에 저장합니다.
+
+## 호출 경계 정의
+
+### 내부 호출
+플랫폼 내부 서비스끼리의 호출입니다.
+
+예시:
 - `gateway-service -> member-service`
 - `gateway-service -> auth-service`
 - `member-service -> auth-service`
 - `member-service -> config-service`
 - `member-service -> hr-service`
 
-### hr-service purpose
-- `hr-service` is fully standalone.
-- HR response format is independent from other services.
-- Other services should only consume the HR response contract through their own mapping.
-- HR is used as the employee verification source for member signup trace flow.
+규칙:
+- 내부 동기 호출은 `Feign Client`를 우선 사용합니다.
+- `X-Trace-Id`를 그대로 전달합니다.
+- trace는 항상 `trace-service`에 기록합니다.
 
-Rules:
-- Use for service-to-service business calls inside the platform.
-- Prefer `Feign Client` for synchronous internal calls.
-- Always propagate `X-Trace-Id`.
-- Always write trace events to `trace-service`.
+### 외부 호출
+플랫폼 외부 시스템으로의 호출입니다.
 
-### External call
-External call means a call to a system outside this platform boundary.
-
-Examples:
-- Partner company REST API
+예시:
+- 파트너사 API
 - SaaS API
-- Legacy external system
+- 레거시 외부 시스템
 
-Rules:
-- Use `RestClient` or `WebClient`.
-- Do not force Feign for external APIs.
-- Set timeout, retry, and error handling explicitly.
-- Always propagate `X-Trace-Id` when the target allows headers.
-- Always write trace events to `trace-service`.
+규칙:
+- `RestClient` 또는 `WebClient`를 사용합니다.
+- Feign으로 억지로 묶지 않습니다.
+- timeout, retry, error handling을 명시합니다.
+- 가능한 경우 `X-Trace-Id`를 전달합니다.
+- trace는 항상 `trace-service`에 기록합니다.
 
-### Client policy
-- Internal synchronous calls: `Feign Client`
-- External API calls: `RestClient` or `WebClient`
-- Trace storage: `trace-service`
-- Response header: `X-Trace-Id`
+## JWT 규칙
+- JWT 발급은 `auth-service`가 담당합니다.
+- JWT 검증과 차단은 `gateway-service`가 담당합니다.
+- 보호된 요청은 `Authorization: Bearer <JWT>` 형식을 사용합니다.
+- 샘플 JWT는 실제 서명 검증 대신 형식 기반 필터를 사용합니다.
 
-### Common contract in `msa-core`
-- `CallBoundaryType`
-  - `INTERNAL`
-  - `EXTERNAL`
-  - `PLATFORM`
-  - `PARTNER`
-- `CallClientType`
-  - `FEIGN`
-  - `REST_CLIENT`
-  - `WEB_CLIENT`
-  - `GATEWAY_PROXY`
-  - `MESSAGE_BUS`
-- `CallMode`
-  - `SYNC`
-  - `ASYNC`
-- `CallErrorPolicy`
-  - `FAIL_FAST`
-  - `RETRY`
-  - `FALLBACK`
-  - `IGNORE`
-- `CallConvention`
-  - `X-Trace-Id` header name
-  - default timeout
-  - default retry count
-  - internal call policy text
-  - external call policy text
-  - trace policy text
-  - internal package pattern
-  - external package pattern
-
-### member-service package layout
-- `com.msa.member.client.internal`
-  - internal service clients using Feign
-- `com.msa.member.client.external`
-  - external API clients using RestClient or WebClient
-- `com.msa.member.service`
-  - business orchestration and trace recording
-
-### auth-service expansion model
+## auth-service 확장 구조
 - `com.msa.auth.auth.strategy`
-  - auth type handlers by strategy
+  - 인증 방식별 처리기
 - `com.msa.auth.auth.dto`
-  - login request and response objects
+  - 로그인/회원가입 요청과 응답
 - `com.msa.auth.auth.token`
-  - JWT token creation
+  - JWT 생성
 - `com.msa.auth.controller.AuthLoginController`
-  - login entry point
-- Supported auth types should grow in this order:
-  - `PASSWORD`
-  - `OTP`
-  - `SOCIAL`
-  - `MFA`
-  - `SSO`
-- Sample flow:
-  - `POST /auth/signup` creates a user and returns JWT tokens
-  - `POST /auth/login` authenticates by `authType` and returns JWT tokens
-  - signup data is stored in H2 memory DB
-  - login reads the same H2 memory DB
-  - restarting the service clears the H2 memory DB, so users must sign up again
+  - 로그인 진입점
 
-### test-service package layout
-- `com.msa.test.controller`
-  - UI page controller and Gateway proxy API
-- `src/main/resources/templates`
-  - Thymeleaf pages
-- `src/main/resources/static`
-  - JavaScript and CSS assets
-- No `service`, `mapper`, `xml`, or DB config is required.
+지원 방향:
+- `PASSWORD`
+- `OTP`
+- `SOCIAL`
+- `MFA`
+- `SSO`
 
-### test-service purpose mapping
-- `Member Service`
-  - member signup and member flow verification through Gateway
-- `Auth Service`
-  - auth flow verification through Gateway
-- `Config Service`
-  - config lookup verification through Gateway
-- `Trace Service`
-  - trace list and trace lookup verification through Gateway
+샘플 흐름:
+- `POST /auth/signup`
+  - 사용자 생성 후 JWT 토큰 반환
+- `POST /auth/login`
+  - `authType` 기준으로 인증 후 JWT 토큰 반환
+- 가입 데이터는 H2 메모리 DB에 저장합니다.
+- 로그인은 같은 H2 메모리 DB를 조회합니다.
+- 서비스 재시작 시 H2 데이터가 사라지므로 다시 가입해야 합니다.
+
+## hr-service 계약
+- `hr-service`는 완전히 독립된 서비스입니다.
+- 응답 포맷은 HR 전용으로 별도 유지합니다.
+- 다른 서비스는 HR 응답을 직접 공용 VO로 쓰지 않고, 필요한 값만 해석합니다.
+- 회원가입 시 HR 확인용으로 사용합니다.
+
+## test-service 목적
+- `test-service`는 MSA 백엔드 통합 테스트용입니다.
+- 비즈니스 서비스가 아닙니다.
+- Thymeleaf UI에서 Ajax로 호출 흐름을 확인합니다.
+- DB 연동은 필요 없습니다.
+- `service`, `mapper`, `xml`, DB 설정은 두지 않습니다.
+- 테스트 요청은 모두 Gateway를 경유합니다.
+
+### test-service 화면 구성
 - `Gateway Service`
-  - gateway health and routing verification
+  - 라우팅 확인
+- `HR Service`
+  - 직원 확인
+- `Member Service`
+  - 회원가입과 회원 흐름 확인
+- `Auth Service`
+  - 회원가입과 로그인, JWT 확인
+- `Config Service`
+  - 설정 조회 확인
+- `Trace Service`
+  - trace 조회 확인
 
-### member-service examples
-- `AuthUserFeignClient`
-  - internal service call example
-- `EligibilityRestClient`
-  - external API call example
-- `HrEmployeeFeignClient`
-  - internal HR verification example
-
-### auth-service examples
-- `AuthStrategy`
-  - common authentication contract
-- `PasswordAuthStrategy`
-  - ID/PW login example
-- `JwtTokenService`
-  - token creation example
-
-### Standard wording
-- Internal call means a platform-owned service-to-service call.
-- External call means a call to a system outside the platform boundary.
-- Internal synchronous calls use Feign.
-- External API calls use RestClient or WebClient.
-- All calls must preserve `X-Trace-Id`.
-- All traces must be stored in `trace-service`.
-
-### member-service policy
-- Internal member flow checks such as HR, dormant-user, and eligibility checks should be treated as internal calls if they are part of the platform.
-- True outside-company integration should be treated as external calls.
-- Member signup responses must include `processId`, `processType`, and `traceId`.
-
-## Gateway rules
-- Gateway is the single entry point.
-- Gateway routes to service URLs configured in `gateway-service/src/main/resources/application.yml`.
-- Gateway always adds `X-Trace-Id` to the response header.
-- Gateway error responses also include `X-Trace-Id`.
-- Gateway filters protected routes by `Authorization: Bearer <JWT>`.
-
-## Service run order
-Run `trace-service` first, then `gateway-service`, then the business services.
-
-1. `trace-service`
-2. `gateway-service`
-3. `config-service`
-4. `auth-service`
-5. `hr-service`
-6. `member-service`
-7. `test-service`
-
-## Default ports
-- `gateway-service`: `8080`
-- `trace-service`: `8090`
-- `config-service`: `8081`
-- `auth-service`: `8082`
-- `member-service`: `8083`
-- `hr-service`: `8084`
-- `test-service`: `8099`
-
-## How to run
-Open one terminal per service folder and run:
-
-```bash
-gradlew bootRun
-```
-
-If you use plain Gradle instead of the wrapper:
-
-```bash
-gradle bootRun
-```
-
-### Example startup order
-Start `trace-service`:
-```bash
-cd trace-service
-gradlew bootRun
-```
-
-Start `gateway-service`:
-```bash
-cd gateway-service
-gradlew bootRun
-```
-
-Start `config-service`:
-```bash
-cd config-service
-gradlew bootRun
-```
-
-Start `auth-service`:
-```bash
-cd auth-service
-gradlew bootRun
-```
-
-Start `member-service`:
-```bash
-cd member-service
-gradlew bootRun
-```
-
-Start `hr-service`:
-```bash
-cd hr-service
-gradlew bootRun
-```
-
-Start `test-service`:
-```bash
-cd test-service
-gradlew bootRun
-```
-
-## Member signup
-Sample signup flow:
-- `member-service` calls `hr-service` first
-- if the employee is active, signup continues
-- the trace shows HR check success or failure
-- `hr-service` is independent and can be deployed or replaced separately
+## member-service 회원가입 흐름
+샘플 흐름:
+- `member-service`가 먼저 `hr-service`를 호출합니다.
+- 직원이 정상(`ACTIVE`)이면 다음 단계로 진행합니다.
+- trace에는 HR 확인 성공/실패가 그대로 남습니다.
+- `hr-service`는 독립 서비스이므로 나중에 교체해도 됩니다.
 
 ### Request
 `POST /members/signup`
 
-### Example
+### 예시
 ```json
 {
   "memberNo": "EMPLOYEE-10001",
@@ -295,7 +195,7 @@ Sample signup flow:
 ```
 
 ### Response
-The response includes:
+응답에는 다음 값이 포함됩니다.
 - `processId`
 - `processType`
 - `traceId`
@@ -303,42 +203,110 @@ The response includes:
 - `memberName`
 - `status`
 
-## Trace APIs
-### List all traces
+## Trace API
+### 전체 조회
 `GET /trace-events`
 
-### Search by trace id
+### traceId 조회
 `GET /trace-events/trace-id/{traceId}`
 
-### Search by process id
+### processId 조회
 `GET /trace-events/process-id/{processId}`
 
-### Search by process id and trace id
+### processId + traceId 복합 조회
 `GET /trace-events/process-id/{processId}/trace-id/{traceId}`
 
-### Search by status
+### 상태별 조회
 `GET /trace-events/status/{status}`
 
-Example status values:
+상태 예시:
 - `RUNNING`
 - `SUCCESS`
 - `FAILED`
 
-## Member process APIs
+## member process API
 - `GET /members/processes`
 - `GET /members/processes/{processId}`
 - `GET /members/processes/{processId}/steps`
 - `GET /members/processes/{processId}/timeline`
 
-## DB selection
-Each service can choose DB type using `app.database-type`.
+## 서비스 실행 순서
+먼저 `trace-service`, 그다음 `gateway-service`, 이후 업무 서비스들을 실행합니다.
 
-Supported values:
-- `H2`
-- `MARIADB`
-- `POSTGRESQL`
+1. `trace-service`
+2. `gateway-service`
+3. `config-service`
+4. `auth-service`
+5. `hr-service`
+6. `member-service`
+7. `test-service`
 
-## Notes
-- This platform uses a central `trace-service` instead of local trace tables.
-- Gateway and every service must keep trace propagation consistent.
-- Internal call and external call boundaries must be decided first before choosing the client.
+## 기본 포트
+- `gateway-service`: `8080`
+- `trace-service`: `8090`
+- `config-service`: `8081`
+- `auth-service`: `8082`
+- `member-service`: `8083`
+- `hr-service`: `8084`
+- `test-service`: `8099`
+
+## 실행 방법
+각 서비스 폴더에서 아래처럼 실행합니다.
+
+```bash
+gradlew bootRun
+```
+
+Gradle wrapper가 없으면:
+
+```bash
+gradle bootRun
+```
+
+### 실행 예시
+`trace-service`
+```bash
+cd trace-service
+gradlew bootRun
+```
+
+`gateway-service`
+```bash
+cd gateway-service
+gradlew bootRun
+```
+
+`config-service`
+```bash
+cd config-service
+gradlew bootRun
+```
+
+`auth-service`
+```bash
+cd auth-service
+gradlew bootRun
+```
+
+`hr-service`
+```bash
+cd hr-service
+gradlew bootRun
+```
+
+`member-service`
+```bash
+cd member-service
+gradlew bootRun
+```
+
+`test-service`
+```bash
+cd test-service
+gradlew bootRun
+```
+
+## 주의 사항
+- 이 플랫폼은 중앙 `trace-service`를 사용합니다.
+- Gateway와 모든 서비스는 trace 전파 규칙을 지켜야 합니다.
+- 내부 호출과 외부 호출 경계를 먼저 정한 뒤 클라이언트를 선택합니다.

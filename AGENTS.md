@@ -13,3 +13,8 @@
 - `msa-core` is shared as a common jar dependency.
 - `gateway-service` is the entry point and routes traffic.
 - Database type selection is handled by service configuration.
+
+## Project Work Principles
+- Follow `PROJECT_WORK_PRINCIPLES.md` for the combined my_harness and MSA development rules.
+- Keep changes minimal, service-specific, and trace-aware.
+- Prefer gateway-first test flows, H2-backed service samples, and explicit service boundaries over shared abstractions.
