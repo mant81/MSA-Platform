@@ -48,7 +48,7 @@ MSA PLATFORM은 Spring Boot 3, Java 21, Gradle 기반의 트레이스 중심 MSA
 - DB 종류는 서비스별 설정 `app.database-type`으로 선택합니다.
 
 ## 개발 방식
-이 프로젝트는 `D:\ai\my_harness` 가이드의 원칙을 따릅니다.
+이 프로젝트는 `my_harness` 가이드의 원칙을 따릅니다.
 
 ### 기본 원칙
 - 요구사항을 먼저 좁게 정의하고, 필요한 것만 만듭니다.
