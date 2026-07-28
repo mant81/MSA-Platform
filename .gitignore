@@ -1,0 +1,33 @@
+# Gradle
+.gradle/
+**/.gradle/
+build/
+**/build/
+
+# IDE
+.idea/
+**/.idea/
+.vscode/
+**/.vscode/
+*.iml
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+
+# Test/coverage outputs
+coverage/
+**/coverage/
+*.exec
+
+# Local files
+.env
+.env.*
