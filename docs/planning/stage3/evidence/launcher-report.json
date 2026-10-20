@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "fixtureFormat": 2,
+  "health": "UP",
+  "directApiWithoutCredentials": 401,
+  "cleanup": "owned launcher child terminated"
+}

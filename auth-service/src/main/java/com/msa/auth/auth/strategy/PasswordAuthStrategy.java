@@ -18,9 +18,6 @@ public class PasswordAuthStrategy implements AuthStrategy {
         response.setSuccess(true);
         response.setAuthType(supportsAuthType());
         response.setTokenType("Bearer");
-        response.setAccessToken("access-token-placeholder");
-        response.setRefreshToken("refresh-token-placeholder");
-        response.setExpiresIn(3600L);
         response.setMessage("password auth ok");
         return response;
     }

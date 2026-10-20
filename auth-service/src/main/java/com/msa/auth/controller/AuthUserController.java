@@ -23,8 +23,4 @@ public class AuthUserController {
         return authUserService.selectAll();
     }
 
-    @PostMapping
-    public int insert(@RequestBody AuthUserVo vo) {
-        return authUserService.insert(vo);
-    }
 }

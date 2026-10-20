@@ -1,0 +1,16 @@
+[
+  {
+    "name": "com.msa.gateway.filter.TraceLoggingFilterTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  },
+  {
+    "name": "com.msa.hr.HrServiceIntegrationTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0"
+  }
+]

@@ -1,6 +1,9 @@
 package com.msa.test.controller;
 
 import java.util.Map;
+import java.util.List;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +19,26 @@ public class TestApiController {
     private final RestClient gatewayClient;
 
     public TestApiController(@Value("${app.gateway-url:http://localhost:8080}") String gatewayUrl) {
-        this.gatewayClient = RestClient.builder().baseUrl(gatewayUrl).build();
+        this.gatewayClient = RestClient.builder().baseUrl(gatewayUrl)
+                .requestInterceptor((request, body, execution) -> {
+                    var attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+                    if (attributes != null) {
+                        for (String name : List.of("Authorization", "X-Trace-Id", "traceparent", "tracestate")) {
+                            String value = attributes.getRequest().getHeader(name);
+                            boolean publicAuth = java.util.Set.of("/auth/signup", "/auth/login", "/auth/refresh", "/auth/logout")
+                                    .contains(request.getURI().getPath());
+                            if (value != null && !("Authorization".equals(name) && publicAuth)) {
+                                request.getHeaders().set(name, value);
+                            }
+                        }
+                    }
+                    var response = execution.execute(request, body);
+                    String traceId = response.getHeaders().getFirst("X-Trace-Id");
+                    if (attributes != null && attributes.getResponse() != null && traceId != null) {
+                        attributes.getResponse().setHeader("X-Trace-Id", traceId);
+                    }
+                    return response;
+                }).build();
     }
 
     @GetMapping("/gateway/{path}")
@@ -82,6 +104,17 @@ public class TestApiController {
     @PostMapping("/auth/login")
     public Object authLogin(@RequestBody Map<String, Object> body) {
         return gatewayClient.post().uri("/auth/login").body(body).retrieve().body(Object.class);
+    }
+
+    @PostMapping("/auth/refresh")
+    public Object refresh(@RequestBody Map<String, Object> body) {
+        return gatewayClient.post().uri("/auth/refresh").body(body).retrieve().body(Object.class);
+    }
+
+    @PostMapping("/auth/logout")
+    public org.springframework.http.ResponseEntity<Void> logout(@RequestBody Map<String, Object> body) {
+        gatewayClient.post().uri("/auth/logout").body(body).retrieve().toBodilessEntity();
+        return org.springframework.http.ResponseEntity.noContent().build();
     }
 
     @GetMapping("/config/configs")

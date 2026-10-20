@@ -1,0 +1,391 @@
+{
+  "runId": "20261020T002107Z-48a23d",
+  "environment": "isolated-h2-local",
+  "productionReady": false,
+  "java": "java version \"25.0.4.1\" 2026-08-18 LTS",
+  "ports": {
+    "trace-service": 40651,
+    "gateway-service": 33871,
+    "config-service": 43587,
+    "auth-service": 41787,
+    "hr-service": 40829,
+    "member-service": 54047,
+    "test-service": 39269,
+    "fault-proxy": 32849
+  },
+  "jarSha256": {
+    "trace-service": "a4db7d275a35751dc9d778a7909f294d775603d87e8932244614403854b2885e",
+    "gateway-service": "f367855939971e3f27f14f37e0542783449e7b0c0281a3eafe08cb69d92759a9",
+    "config-service": "b1f6fe5715f1e347ab640b1052d0630da9b614b8a1bba6e53ee46391e42f700d",
+    "auth-service": "1e608c4ade32747fda55e3d0bdd338b763c51f9261657a3df1b870eacedfbdae",
+    "hr-service": "ef82c2c66344ef08a5eb08fd5845a9f19214021afb523e10322c71cba9efc6b2",
+    "member-service": "b91c7712c10f6ddd2e9eeaf8073f31625fc146e063ab337e976448bbacc1c2ff",
+    "test-service": "1c7d290af8e806bf424bbd18b1792c9326965608f4fb66e579e24c2e52ba1c7d"
+  },
+  "sourceSha256": {
+    "build.gradle": "62c38c3c440f7b6597702135e72e6296fd232dad93ac44248b2084f35bbcb1f8",
+    "settings.gradle": "1eee7f9741105f531a33db96a8daa5e8e5bf133bc4b5548aecc397aba59cf871",
+    "test-service/build.gradle": "d321bd41b11e8ff47c8486eb4ae514b15c8e4f1c4ab29f2ba0a023a179385468",
+    "msa-core/build.gradle": "de9b9bc13f194feedf149e2608cc80331e4290f61fe0ff2c0a6e1da3179e9b82",
+    "auth-service/build.gradle": "58db07da077acab88a027586ebc7bf7c5e5143a4821ea4b8dde4442a59770850",
+    "config-service/build.gradle": "58db07da077acab88a027586ebc7bf7c5e5143a4821ea4b8dde4442a59770850",
+    "gateway-service/build.gradle": "02862e3296f80d30dd2596475d4e28be9bb4f862be0acc6814f7a90efbcbfdc3",
+    "trace-service/build.gradle": "58db07da077acab88a027586ebc7bf7c5e5143a4821ea4b8dde4442a59770850",
+    "member-service/build.gradle": "e7057edeb10103e882c7c47a9927d2faa0f8b1903ccb09e23f1e16764ff9a4f2",
+    "hr-service/build.gradle": "4007d87a3a590b11075fbc28c47c0a660b857c60fd2090c9f6e01aaf8a399862",
+    "docs/contracts/v1/observation-event.schema.json": "e3f5c34576a7d4d0298611fec339e5694ab73b765b92a6a6cc1af345bebdf58d",
+    "docs/contracts/v1/examples/valid-events.json": "c92686db7025062f8b8403f9d6778776d7c708be7800f58af19ba71f3da1cbec",
+    "docs/planning/stage1/evidence/postgres-report.json": "55b0d6e170c46bec94f010414b194f7a994618613a93f71f8e36f2f4e4ea19a6",
+    "docs/planning/stage1/evidence/baseline-report.json": "179fa85f41f9c3188f849691f114ffb9596cb6e41a03ab5ecb1fa02478f16d8f",
+    "tools/verification/stage1_baseline.py": "d4218d87102a41006421ba2f2af7ebc89f145b20453ec4a74b90665e933b1dfd",
+    "tools/verification/stage2_regression.py": "5d4db49408b51627b98f2c50df79fe27a51eca78fce469c84e065a42499d65d4",
+    "tools/verification/postgres_drill.py": "3bcc3d54a848747c9d198637c5d6971ac2c1109c4689ae6548b3f33c1ff1b32d",
+    "tools/verification/validate_contract.py": "29216d003600645ec9669d34fd293c7c69b2326bf53b8c82ce8bb06cb8b06fba",
+    "test-service/src/main/resources/application.yml": "bbee13ebbfd0bb33f2bb6d308d3cbd68d6b033e513d97e3ad0da9b86c8ed9d16",
+    "test-service/src/main/java/com/msa/test/TestServiceApplication.java": "16360c1445be78190f583a2d4928bd92b0c68af8fe5a5a846eb124a19fe13a30",
+    "test-service/src/main/java/com/msa/test/controller/HomeController.java": "2ad100021bd4dbda81f83ceafd12494b28d1a764e668d4628b0a98b465a4a168",
+    "test-service/src/main/java/com/msa/test/controller/TestApiController.java": "73d97ca9118785077c5498e694b1c6066249378d22be77bcdb503508523fc106",
+    "test-service/src/main/java/com/msa/test/config/GatewayResponseHandler.java": "3f92e2850df7ba8b784db3ade48ec9b7a914f92919926b4ef3500777c1b5d067",
+    "msa-core/src/main/java/com/msa/core/TraceEventType.java": "738bac5c6fe797a1f2c9142aeeda5363c017814e7088f4cfa4a300653a18b4ce",
+    "msa-core/src/main/java/com/msa/core/ErrorType.java": "f373b53fbe20a43b8a6da23f72c61c99953ffd6e77c2de2aea48a0a12c84f230",
+    "msa-core/src/main/java/com/msa/core/BusinessStepStatus.java": "0157593936b68c445f99662e33636c103079d495d5e9df089025c9c22768e3fb",
+    "msa-core/src/main/java/com/msa/core/DatabaseType.java": "2a5e77267dbdad8e63a38cef1e5d79bc0f7cc8999872692be5c979ebbd63cdb7",
+    "msa-core/src/main/java/com/msa/core/BusinessException.java": "66c8605a2ea935cb6e177da7ebe58c1508041ac9a2d2dc617409902d45ffe44b",
+    "msa-core/src/main/java/com/msa/core/TraceContext.java": "0127bc2d6b82b73be05109ebd0cf3c39e6e38d3e2f91b7aedf458f94fb1757c0",
+    "msa-core/src/main/java/com/msa/core/TraceEventVo.java": "72497f9aa6c1595443896dab7ce2ba3ed5caef8d939882394dd28d8d8f6a525e",
+    "msa-core/src/main/java/com/msa/core/BusinessProcessStatus.java": "f65947697ce40742bbe0e6e0788f8f52d3004737fbaf1dca595c72cc9575bfa3",
+    "msa-core/src/main/java/com/msa/core/BaseResponse.java": "ff76629be4f95205faac5a5e0f0f529acc4131424ba6bd0145f75885f318bb12",
+    "msa-core/src/main/java/com/msa/core/call/CallClientType.java": "1453b248f9480c0d7e85cc8e1c251c2a60c900d6d1cbed494a8283920ae9d53d",
+    "msa-core/src/main/java/com/msa/core/call/CallBoundaryType.java": "88c601b65573962e2cf0944a62d63a1121e5ec992405a6563ab369fdcff89f02",
+    "msa-core/src/main/java/com/msa/core/call/CallConvention.java": "caa5c92af6ddb6d454b54a0a64398fc6bc1b58d90208c74b2f18ecc72c525d69",
+    "msa-core/src/main/java/com/msa/core/call/CallErrorPolicy.java": "2167b05b277a4a7cbbb94e9b0476399309e065aded9765f29fdfd53e9ff266e1",
+    "msa-core/src/main/java/com/msa/core/call/CallMode.java": "ad98167b3b959fdc55b4aaed8b624198b2b9cac8950a39f0fb08243ae45a6454",
+    "auth-service/src/main/resources/application.yml": "3a3bd24e809d50790c1a7f2c04847ce2aab2ba3b0cf13f2c990082e64de51406",
+    "auth-service/src/main/resources/schema.sql": "5d041651607f155cd522a49b020e8d8a4242152d5168b7e0d3020efa2f794ceb",
+    "auth-service/src/main/java/com/msa/auth/AuthServiceApplication.java": "fdd1a0dee73d1a65f9b2f7c2bc441d6cab969de11b7dedf41e4d8bb99819855d",
+    "auth-service/src/main/java/com/msa/auth/controller/AuthLoginController.java": "477c56c042c25145f72c97e9c33de95d9d545ed94293840b9cc8604588063ad2",
+    "auth-service/src/main/java/com/msa/auth/controller/AuthUserController.java": "af29f0bb94358d834bb6c34b62599b8713694edb6b3c3d5b63bfffca56439016",
+    "auth-service/src/main/java/com/msa/auth/config/DataSourceConfig.java": "3b476c85ed2f391d1100d6ebe7016a5681386565b61aae16ef553168cfd3c733",
+    "auth-service/src/main/java/com/msa/auth/config/TraceFilter.java": "b0b60aed3b8972f8b396a68a550734643126bfaef46514c624c71da6932aa258",
+    "auth-service/src/main/java/com/msa/auth/vo/AuthUserVo.java": "e4612a869d805e8ec4d55d2e1c33a9ed0acc783be59a8e659958e2b7be1dc9db",
+    "auth-service/src/main/java/com/msa/auth/mapper/AuthUserMapper.java": "6ea0af4b50210a13f138d2822fe063c28fc99575ef6956bbed86061d86442371",
+    "auth-service/src/main/java/com/msa/auth/service/AuthUserService.java": "8680b14b8bf372aa129d9ea4f48e6ec8cd1a691e580597ae72a9538b7a12715c",
+    "auth-service/src/main/java/com/msa/auth/auth/strategy/AuthStrategyResolver.java": "96a7bf66ab800908b8d909caa3190cfe48c3025dc119cc48dcd073ba45656a28",
+    "auth-service/src/main/java/com/msa/auth/auth/strategy/AuthStrategy.java": "9154541f3db189160a7963df1e9381ef63aacf1a06ea6d46b9e8929d7b60cfd6",
+    "auth-service/src/main/java/com/msa/auth/auth/strategy/PasswordAuthStrategy.java": "3b6c0bc91d8675536bbe41bc5048337783ca1e33ab1fb8206295d20faf73a518",
+    "auth-service/src/main/java/com/msa/auth/auth/dto/AuthSignupResponseVo.java": "390f1d00bc63f2e7bd8786a04171db31e0a0d71f9613f5ee6c6d364be871310e",
+    "auth-service/src/main/java/com/msa/auth/auth/dto/AuthLoginResponseVo.java": "edb02ce0b20af9ea60b23b6e85acd906a0963073800733f5cf4279811677913a",
+    "auth-service/src/main/java/com/msa/auth/auth/dto/AuthLoginRequestVo.java": "300e42a1321b0abfc214396b2d731012d445bd695e122ec9bde943f329358636",
+    "auth-service/src/main/java/com/msa/auth/auth/dto/AuthSignupRequestVo.java": "8291047e66b75908fb33dfb5aa23eeb57736393df260d1f6cbc52a8215706a88",
+    "auth-service/src/main/java/com/msa/auth/auth/token/JwtTokenService.java": "7254083753c9dd638c1aaf8e003d1d433f9aae4b9d3eb26a373d6b279f3b9400",
+    "auth-service/src/main/resources/mapper/AuthUserMapper.xml": "889145c55ab3592f8ecebff423497489967639caccaa0917c0e03301bc6267ae",
+    "config-service/src/main/resources/application.yml": "e89ce369936e005e76e5c7295239cf0d07af9cca8bdd5c58436669fa7f8a9ea4",
+    "config-service/src/main/resources/schema.sql": "7039c002b664048d39ac1f5b92bff5c469d424ecd71edcd538fcf4cf7d5d809d",
+    "config-service/src/main/java/com/msa/config/ConfigServiceApplication.java": "e49199f594a66def6a69399be8408dcdff625c3c14c4daf57e39364128728eea",
+    "config-service/src/main/java/com/msa/config/controller/ConfigController.java": "a58e793d0d6716f94b6a225b5ee945a11ddcc2f4ee073460322e72e6937824ae",
+    "config-service/src/main/java/com/msa/config/config/DataSourceConfig.java": "1855652d8c1830761ed6d1feb47cff6f7089d7cd7f6d436c789f5f3abf62dcee",
+    "config-service/src/main/java/com/msa/config/config/TraceFilter.java": "5aeffcbf6c341fa1ff5377e73f3022ce3f869712f929a01bde82215d36f190a9",
+    "config-service/src/main/java/com/msa/config/vo/ConfigVo.java": "cd28d3cd29cf5e935e7069ef9401796117e938398db6976d5728b318a7ddc196",
+    "config-service/src/main/java/com/msa/config/mapper/ConfigMapper.java": "d8365bf7d8255fd3895e27c4827789d59c7772de7cad3bc17fd9989cf01abca1",
+    "config-service/src/main/java/com/msa/config/service/ConfigService.java": "972ee223a44ab0231287b7df59dc09db03eb449bbecb21b36f2ccce3cb8f3ed4",
+    "config-service/src/main/resources/mapper/ConfigMapper.xml": "de830f0331506717541aa8feaf4d0f16229223fa5bb7541be21968a47ca6cc23",
+    "gateway-service/src/main/resources/application.yml": "8afe5f309833d32d27a75a46f01123c1933147f30ff517dffb04c964cf19a994",
+    "gateway-service/src/main/resources/schema.sql": "2a4bc5e92217e386c657fc417edb69b87f39d57404bc1c32ef7bf04d4f7a672f",
+    "gateway-service/src/main/java/com/msa/gateway/GatewayServiceApplication.java": "12c3bd44f78761150f4f2a737bbf162ba3d15457e0619b00f6148705d0a0ff9b",
+    "gateway-service/src/main/java/com/msa/gateway/config/GatewayExceptionHandler.java": "808fb56b76720ad86437070399908d064d63092ad1b130475cd75026ee476dd4",
+    "gateway-service/src/main/java/com/msa/gateway/config/DataSourceConfig.java": "32d3f2f41a508a0d3af6750bb241564d5cfb45b724bc9206c0a22da9326a7c34",
+    "gateway-service/src/main/java/com/msa/gateway/mapper/TraceEventMapper.java": "8183e29f63445161dbe1a11544e2caf50ff03428fae0c7bb7352de3cc95901ed",
+    "gateway-service/src/main/java/com/msa/gateway/filter/JwtAuthenticationFilter.java": "3df86b2e3dfbccc4e90222a146e9b0f5baff68375caa2d70041a866a5b1fd725",
+    "gateway-service/src/main/java/com/msa/gateway/filter/TraceLoggingFilter.java": "9000eaf8d482cf2e5f702cb2423b6b20e2687e5816475e98b4edfc1ecae9648e",
+    "gateway-service/src/main/resources/mapper/TraceEventMapper.xml": "7bad9be431d484bf36cac444584d155709bf0521ef33b104215062de7411b8bc",
+    "gateway-service/src/test/java/com/msa/gateway/filter/TraceLoggingFilterTest.java": "9ab076bebba7316ab739509d4cb1c11fc902fd791e3037c56e0fc6e746ab7201",
+    "trace-service/src/main/resources/application.yml": "0048fbdf8433d10e3a051b02c781487d3d7b71d30395a6a836cdcc01c5ac61c1",
+    "trace-service/src/main/resources/schema.sql": "2a4bc5e92217e386c657fc417edb69b87f39d57404bc1c32ef7bf04d4f7a672f",
+    "trace-service/src/main/java/com/msa/trace/TraceServiceApplication.java": "5a8205fc4b01608eea1102cc9749844ed9d1ad444b6934a4b1915f12b5883bc5",
+    "trace-service/src/main/java/com/msa/trace/client/TraceClient.java": "bdccc55324eb25fe502474319e52af8fdd33251c61588afc1553c73bce880bdf",
+    "trace-service/src/main/java/com/msa/trace/controller/TraceController.java": "94ac248dfa812d26a418b70b521355378fc3dcfc2f02414603bbae3c4e8a164e",
+    "trace-service/src/main/java/com/msa/trace/config/DataSourceConfig.java": "82dcaea91fce42f503cbb5841d2cc7e6b074b698e640ece2bbf6ec131d8d0049",
+    "trace-service/src/main/java/com/msa/trace/mapper/TraceEventMapper.java": "0515ed9e104dd77c0f9a5de5605f055b3e7d3d42e106eed505ea3ffe349d4707",
+    "trace-service/src/main/java/com/msa/trace/service/TraceService.java": "58f3afe78b18c5612977ccefd2c940d5699b37c4bff6b67bed67751dd55a8c3a",
+    "trace-service/src/main/resources/mapper/TraceEventMapper.xml": "aaabb42a1837ab7c41d65357e30102ebc637ec6cc87b7b69324b1f8475ee51c0",
+    "member-service/src/main/resources/application.yml": "6dba8874acd4050beeaf483515a6e92cd2a4d758358f58dd36a40980cf7e0db5",
+    "member-service/src/main/resources/schema.sql": "bc1899bf05d941a9ae4d7ad483bb38f842ead79b8b4377af9dc105492def3158",
+    "member-service/src/main/java/com/msa/member/MemberServiceApplication.java": "73636289ef0622bf962c4942c818e4696482316207a3f3a98c9175052aa86e30",
+    "member-service/src/main/java/com/msa/member/client/TraceClient.java": "05e9b2aa80f94cd20d5e7f36e36e0f4313328a9b93dce9ef321a2fedcedd8331",
+    "member-service/src/main/java/com/msa/member/controller/MemberController.java": "7260de47b0dc64b33366e2797229a302b5d006a5b0e398a9749d2a9557c8aacf",
+    "member-service/src/main/java/com/msa/member/config/DataSourceConfig.java": "e9653d1b12eec32e0bee939b44cc187e5e51dc2f290fad75de22a36152785f9b",
+    "member-service/src/main/java/com/msa/member/config/TraceFilter.java": "5014050a76d0ec33c94c170c21a674d9da5fd078813a65f070e2781bfac0284b",
+    "member-service/src/main/java/com/msa/member/vo/MemberSignupVo.java": "2eb226fe3280539c98a8a946f6a28762430b99658dde3d2ce4687cbea24c1d9d",
+    "member-service/src/main/java/com/msa/member/vo/MemberProcessStepVo.java": "88efce048df9942129397de65b9152edddcb6db2f8d0778564b6fff819a93aa2",
+    "member-service/src/main/java/com/msa/member/vo/MemberVo.java": "0b37bab97590aa8c846d3347faab5e9861de4a0b38631ed3dd66e36480975fb8",
+    "member-service/src/main/java/com/msa/member/vo/MemberProcessVo.java": "f5d0f79b4645f41b6493cb841dcdff6b67326abfb7c9aa3e171812c98fe54270",
+    "member-service/src/main/java/com/msa/member/vo/MemberProcessEventVo.java": "06947f251fa2b06d757f6aef4b820cd818d709dcf91c1cbb1696724ff0f2008e",
+    "member-service/src/main/java/com/msa/member/mapper/MemberMapper.java": "29f1d6ea3124027c8093d380b1adcd548811b22c73c3f861ade90b5110eafd00",
+    "member-service/src/main/java/com/msa/member/service/MemberService.java": "dc72f3fea706c17cda8cf7a8692271353e35b46564062b0299a93f62acdbdd16",
+    "member-service/src/main/java/com/msa/member/client/external/EligibilityRestClient.java": "e9e562b66b3f0583ab9e5c1120434203e37b6f5eb10af5e41668b6fed8a4756e",
+    "member-service/src/main/java/com/msa/member/client/internal/AuthUserFeignClient.java": "7fa2996b035baf915f18c52873dcbe032e1950359d452c1d55c5bed5b2876d9b",
+    "member-service/src/main/java/com/msa/member/client/internal/HrEmployeeFeignClient.java": "b36e1f03f9e88e6cc08d8f1a513c9a1b3964a2f6c5dfedcb5f2f9914ef19f51f",
+    "member-service/src/main/resources/mapper/MemberMapper.xml": "85dc02a072bed70fcf2ca45f424b163ef73655293cb4a5626ec4915ec8bb4a5f",
+    "hr-service/src/main/resources/application.yml": "3444b4fb3b1068ddabdfa7df9c89d51fcf7750fa64bf166ba386ddba2d76dc75",
+    "hr-service/src/main/resources/schema.sql": "83677a51dbeaa1d5c4f6c45ef4a0e53d538b66d01fb08e81c234ba174151f1f0",
+    "hr-service/src/main/java/com/msa/hr/HrServiceApplication.java": "b9176fbb2abc61b4a2adc80dbdbb4d9cd4cdbe96475a98abc1e9fd63086663a3",
+    "hr-service/src/main/java/com/msa/hr/controller/HrEmployeeController.java": "47e0d4ac0636fd2b70ec3a4c1462056f22bb9af8c9b8a0a00ccab0622f9c1a8b",
+    "hr-service/src/main/java/com/msa/hr/config/DataSourceConfig.java": "a9d8549e550c847f3cdeb3bc04e0df28341804c205c9f2f070d0de3bf4b6955e",
+    "hr-service/src/main/java/com/msa/hr/config/TraceHeaderFilter.java": "1056289a33bec07e5f9555c25018b1fd7b6b95d3cf74e8037953de1659b40e3c",
+    "hr-service/src/main/java/com/msa/hr/vo/HrEmployeeCheckVo.java": "d2f6809e157839eb6bf28e59a6ff20ffbb63769f778e97097fe42f4666404173",
+    "hr-service/src/main/java/com/msa/hr/vo/HrEmployeeVo.java": "d177fddf56cdcaee01bdeea20a818d29bbe5de3ecc47fff8d3eb93ef5028bd03",
+    "hr-service/src/main/java/com/msa/hr/mapper/HrEmployeeMapper.java": "a004fb5985f9a6231435a97210986b98ec7fcb07403dc11da201c09b0f36c750",
+    "hr-service/src/main/java/com/msa/hr/service/HrEmployeeService.java": "3a3fb6b615d6a010b745c8f50714f511c2838ca332bbb79eec27a52ab9365ff9",
+    "hr-service/src/main/resources/mapper/HrEmployeeMapper.xml": "69555b161953da6c043614c63a18691ee5a73b557c29dbfc2774e6c0976cd1af",
+    "hr-service/src/test/java/com/msa/hr/HrServiceIntegrationTest.java": "0db7d996bc7b8da2c8f378fa83193433aca693d40b26ac7a1b4e9467a3caffb8"
+  },
+  "results": [
+    {
+      "id": "START-test-service",
+      "status": "PASS",
+      "detail": "HTTP response confirmed",
+      "wbs": null
+    },
+    {
+      "id": "START-trace-service",
+      "status": "PASS",
+      "detail": "HTTP response confirmed",
+      "wbs": null
+    },
+    {
+      "id": "START-config-service",
+      "status": "PASS",
+      "detail": "HTTP response confirmed",
+      "wbs": null
+    },
+    {
+      "id": "START-hr-service",
+      "status": "PASS",
+      "detail": "HTTP response confirmed",
+      "wbs": null
+    },
+    {
+      "id": "START-auth-service",
+      "status": "PASS",
+      "detail": "HTTP response confirmed",
+      "wbs": null
+    },
+    {
+      "id": "START-member-service",
+      "status": "PASS",
+      "detail": "HTTP response confirmed",
+      "wbs": null
+    },
+    {
+      "id": "START-gateway-service",
+      "status": "PASS",
+      "detail": "HTTP response confirmed",
+      "wbs": null
+    },
+    {
+      "id": "UI-SIGNUP-AUTH",
+      "status": "PASS",
+      "detail": "UI→Gateway→Auth signup",
+      "wbs": null
+    },
+    {
+      "id": "UNAUTH-33871",
+      "status": "PASS",
+      "detail": "HTTP 401, response correlation present",
+      "wbs": null
+    },
+    {
+      "id": "UNAUTH-39269",
+      "status": "PASS",
+      "detail": "HTTP 401, response correlation present",
+      "wbs": null
+    },
+    {
+      "id": "UI-AUTH-AND-TRACE",
+      "status": "PASS",
+      "detail": "UI forwards auth and trace, returns correlation",
+      "wbs": null
+    },
+    {
+      "id": "FLOW-ACTIVE",
+      "status": "PASS",
+      "detail": "UI→Gateway signup HTTP 200, error=None, Trace ID preserved",
+      "wbs": null
+    },
+    {
+      "id": "STATE-ACTIVE",
+      "status": "PASS",
+      "detail": "process and started steps terminal",
+      "wbs": null
+    },
+    {
+      "id": "HR-HEADER-ACTIVE",
+      "status": "PASS",
+      "detail": "same X-Trace-Id reached HR boundary",
+      "wbs": null
+    },
+    {
+      "id": "MEMBER-SAVED",
+      "status": "PASS",
+      "detail": "successful signup persisted member",
+      "wbs": null
+    },
+    {
+      "id": "FLOW-INACTIVE",
+      "status": "PASS",
+      "detail": "UI→Gateway signup HTTP 422, error=HR_NOT_ACTIVE, Trace ID preserved",
+      "wbs": null
+    },
+    {
+      "id": "STATE-INACTIVE",
+      "status": "PASS",
+      "detail": "process and started steps terminal",
+      "wbs": null
+    },
+    {
+      "id": "HR-HEADER-INACTIVE",
+      "status": "PASS",
+      "detail": "same X-Trace-Id reached HR boundary",
+      "wbs": null
+    },
+    {
+      "id": "BUSINESS-NOT-TIMEOUT",
+      "status": "PASS",
+      "detail": "business rejection distinct from transport timeout",
+      "wbs": null
+    },
+    {
+      "id": "FLOW-MISSING",
+      "status": "PASS",
+      "detail": "UI→Gateway signup HTTP 422, error=HR_NOT_ACTIVE, Trace ID preserved",
+      "wbs": null
+    },
+    {
+      "id": "STATE-MISSING",
+      "status": "PASS",
+      "detail": "process and started steps terminal",
+      "wbs": null
+    },
+    {
+      "id": "HR-HEADER-MISSING",
+      "status": "PASS",
+      "detail": "same X-Trace-Id reached HR boundary",
+      "wbs": null
+    },
+    {
+      "id": "FLOW-SIMULATED-TIMEOUT",
+      "status": "PASS",
+      "detail": "UI→Gateway signup HTTP 504, error=EXT_TIMEOUT, Trace ID preserved",
+      "wbs": null
+    },
+    {
+      "id": "STATE-SIMULATED-TIMEOUT",
+      "status": "PASS",
+      "detail": "process and started steps terminal",
+      "wbs": null
+    },
+    {
+      "id": "HR-HEADER-SIMULATED-TIMEOUT",
+      "status": "PASS",
+      "detail": "same X-Trace-Id reached HR boundary",
+      "wbs": null
+    },
+    {
+      "id": "HR-FAULT-unavailable",
+      "status": "PASS",
+      "detail": "HTTP 503, error=HR_UNAVAILABLE",
+      "wbs": null
+    },
+    {
+      "id": "FAULT-STATE-unavailable",
+      "status": "PASS",
+      "detail": "no process/step left RUNNING",
+      "wbs": null
+    },
+    {
+      "id": "HR-FAULT-delay",
+      "status": "PASS",
+      "detail": "HTTP 504, error=HR_TIMEOUT",
+      "wbs": null
+    },
+    {
+      "id": "FAULT-STATE-delay",
+      "status": "PASS",
+      "detail": "no process/step left RUNNING",
+      "wbs": null
+    },
+    {
+      "id": "HR-FAULT-disconnect",
+      "status": "PASS",
+      "detail": "HTTP 503, error=HR_UNAVAILABLE",
+      "wbs": null
+    },
+    {
+      "id": "FAULT-STATE-disconnect",
+      "status": "PASS",
+      "detail": "no process/step left RUNNING",
+      "wbs": null
+    },
+    {
+      "id": "HR-RECOVERED",
+      "status": "PASS",
+      "detail": "signup succeeds after dependency recovery",
+      "wbs": null
+    },
+    {
+      "id": "UI-TRACE-READ",
+      "status": "PASS",
+      "detail": "UI→Gateway→Trace read route",
+      "wbs": null
+    },
+    {
+      "id": "TRACE-WRITE-NOT-EXPOSED",
+      "status": "PASS",
+      "detail": "external write not routed, HTTP 404",
+      "wbs": null
+    },
+    {
+      "id": "GATEWAY-COLLECTOR-ISOLATED",
+      "status": "PASS",
+      "detail": "collector 503 did not replace business response, HTTP 200",
+      "wbs": null
+    },
+    {
+      "id": "GW-TRACE-SUCCESS",
+      "status": "PASS",
+      "detail": "success recorded centrally",
+      "wbs": null
+    },
+    {
+      "id": "GW-TRACE-422",
+      "status": "PASS",
+      "detail": "business HTTP error not recorded as success",
+      "wbs": null
+    },
+    {
+      "id": "GW-TRACE-503",
+      "status": "PASS",
+      "detail": "dependency error recorded as failure",
+      "wbs": null
+    },
+    {
+      "id": "GW-TRACE-504",
+      "status": "PASS",
+      "detail": "timeout response recorded as failure",
+      "wbs": null
+    },
+    {
+      "id": "GENERATED-TRACE-ID",
+      "status": "PASS",
+      "detail": "missing correlation generates one 32-character ID",
+      "wbs": null
+    }
+  ],
+  "counts": {
+    "PASS": 40,
+    "FAIL": 0,
+    "BLOCKED": 0,
+    "ERROR": 0
+  },
+  "cleanup": "only harness-owned child processes stopped; no existing service/container touched"
+}

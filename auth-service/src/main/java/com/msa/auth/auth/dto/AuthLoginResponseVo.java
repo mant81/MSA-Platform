@@ -1,6 +1,9 @@
 package com.msa.auth.auth.dto;
 
 public class AuthLoginResponseVo {
+    private String code;
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
     private boolean success;
     private String authType;
     private String tokenType;

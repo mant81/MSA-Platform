@@ -4,20 +4,20 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.msa.auth.mapper.AuthUserMapper">
     <select id="selectAll" resultType="com.msa.auth.vo.AuthUserVo">
-        select id, user_id as userId, user_name as userName, password_hash as passwordHash, status
+        select id, user_id as userId, user_name as userName, status, role
         from auth_user
         order by id desc
     </select>
 
     <select id="selectByUserId" parameterType="string" resultType="com.msa.auth.vo.AuthUserVo">
-        select id, user_id as userId, user_name as userName, password_hash as passwordHash, status
+        select id, user_id as userId, user_name as userName, password_hash as passwordHash, status, role
         from auth_user
         where user_id = #{userId}
     </select>
 
     <insert id="insert" parameterType="com.msa.auth.vo.AuthUserVo" useGeneratedKeys="true" keyProperty="id">
-        insert into auth_user (user_id, user_name, password_hash, status)
-        values (#{userId}, #{userName}, #{passwordHash}, #{status})
+        insert into auth_user (user_id, user_name, password_hash, status, role)
+        values (#{userId}, #{userName}, #{passwordHash}, #{status}, #{role})
     </insert>
 
     <insert id="insertTraceEvent" parameterType="com.msa.core.TraceEventVo" useGeneratedKeys="true" keyProperty="id">

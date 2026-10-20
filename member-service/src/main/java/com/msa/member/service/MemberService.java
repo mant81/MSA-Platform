@@ -1,6 +1,10 @@
 package com.msa.member.service;
 
 import com.msa.core.BusinessProcessStatus;
+import com.msa.core.BusinessException;
+import feign.FeignException;
+import java.net.SocketTimeoutException;
+import org.springframework.dao.DataAccessException;
 import com.msa.core.BusinessStepStatus;
 import com.msa.core.ErrorType;
 import com.msa.core.TraceEventVo;
@@ -44,9 +48,8 @@ public class MemberService {
         return memberMapper.insert(vo);
     }
 
-    public MemberSignupVo insertSignup(MemberVo vo) {
+    public MemberSignupVo insertSignup(MemberVo vo, String traceId) {
         String processId = "SIGNUP-" + LocalDate.now().toString().replace("-", "") + "-" + UUID.randomUUID().toString().substring(0, 6);
-        String traceId = UUID.randomUUID().toString().replace("-", "").substring(0, 16);
         OffsetDateTime startTime = OffsetDateTime.now();
 
         MemberProcessVo process = new MemberProcessVo();
@@ -61,33 +64,34 @@ public class MemberService {
 
         recordTrace(traceId, processId, vo.getMemberNo(), null, "REQUEST_STARTED", "API Gateway", "회원가입 요청 수신", BusinessStepStatus.RUNNING.name(), 0L, null, null);
         recordEvent(processId, null, "PROCESS_STARTED", "API Gateway", "회원가입 요청 수신", BusinessStepStatus.RUNNING.name(), traceId);
-        recordEvent(processId, "REGISTER_MEMBER", "STEP_STARTED", "Member Service", "회원가입 시작", BusinessStepStatus.RUNNING.name(), traceId);
 
+        String currentStepId = "CHECK_HR_EMPLOYEE";
+        String currentService = "HR Service";
         try {
             selectStepStarted(processId, "CHECK_HR_EMPLOYEE", "HR Service", "인사정보 확인 시작", traceId);
-            Map<String, Object> hrResult = hrEmployeeFeignClient.selectByEmployeeNo(vo.getMemberNo());
-            if (hrResult == null || !Boolean.TRUE.equals(hrResult.get("exists"))) {
-                selectStepTimeout(processId, "CHECK_HR_EMPLOYEE", "HR Service", "정상 직원이 아님", traceId);
-                selectStepNotExecuted(processId, "CHECK_DORMANT_MEMBER", "Dormant Service", "HR 검증 실패로 미실행", traceId);
-                selectStepNotExecuted(processId, "CHECK_EXTERNAL_ELIGIBILITY", "External Service", "HR 검증 실패로 미실행", traceId);
-                selectStepNotExecuted(processId, "SAVE_MEMBER", "Member DB", "HR 검증 실패로 미실행", traceId);
-                throw new IllegalStateException("HR_NOT_ACTIVE");
+            Map<String, Object> hrResult = hrEmployeeFeignClient.selectByEmployeeNo(vo.getMemberNo(), traceId);
+            if (hrResult == null || !Boolean.TRUE.equals(hrResult.get("active"))) {
+                throw new BusinessException("HR_NOT_ACTIVE", "정상 직원이 아닙니다.");
             }
             selectStepSucceeded(processId, "CHECK_HR_EMPLOYEE", "HR Service", "인사정보 확인 성공", traceId);
 
+            currentStepId = "CHECK_DORMANT_MEMBER";
+            currentService = "Dormant Service";
             selectStepStarted(processId, "CHECK_DORMANT_MEMBER", "Dormant Service", "휴면 여부 확인 시작", traceId);
             selectStepSucceeded(processId, "CHECK_DORMANT_MEMBER", "Dormant Service", "휴면 여부 확인 성공", traceId);
 
+            currentStepId = "CHECK_EXTERNAL_ELIGIBILITY";
+            currentService = "External Service";
             selectStepStarted(processId, "CHECK_EXTERNAL_ELIGIBILITY", "External Service", "외부 가입 조건 확인 시작", traceId);
 
             if ("TIMEOUT".equalsIgnoreCase(vo.getStatus())) {
-                selectStepTimeout(processId, "CHECK_EXTERNAL_ELIGIBILITY", "External Service", "응답 시간 초과", traceId);
-                selectStepNotExecuted(processId, "SAVE_MEMBER", "Member DB", "이전 단계 실패로 미실행", traceId);
-                throw new IllegalStateException("EXT_TIMEOUT");
+                throw new BusinessException("EXT_TIMEOUT", "외부 시스템 응답 시간이 초과되었습니다.");
             }
 
             selectStepSucceeded(processId, "CHECK_EXTERNAL_ELIGIBILITY", "External Service", "외부 가입 조건 확인 성공", traceId);
 
+            currentStepId = "SAVE_MEMBER";
+            currentService = "Member DB";
             selectStepStarted(processId, "SAVE_MEMBER", "Member DB", "회원정보 저장 시작", traceId);
             MemberVo saved = new MemberVo();
             saved.setMemberNo(vo.getMemberNo());
@@ -110,27 +114,52 @@ public class MemberService {
             response.setMemberName(saved.getMemberName());
             response.setStatus(saved.getStatus());
             return response;
-        } catch (IllegalStateException ex) {
-            process.setStatus(BusinessProcessStatus.FAILED.name());
-            if ("HR_NOT_ACTIVE".equals(ex.getMessage())) {
-                process.setErrorCode("HR_NOT_ACTIVE");
-                process.setErrorType(ErrorType.BUSINESS.name());
-                process.setErrorMessage("정상 직원이 아닙니다.");
+        } catch (RuntimeException ex) {
+            String code;
+            ErrorType errorType;
+            String message;
+            if (ex instanceof BusinessException business) {
+                code = business.getCode();
+                errorType = "EXT_TIMEOUT".equals(code) ? ErrorType.TIMEOUT : ErrorType.BUSINESS;
+                message = business.getMessage();
+            } else if (ex instanceof FeignException) {
+                boolean timeout = false;
+                for (Throwable cause = ex; cause != null; cause = cause.getCause()) {
+                    if (cause instanceof SocketTimeoutException || cause instanceof java.net.http.HttpTimeoutException) {
+                        timeout = true;
+                        break;
+                    }
+                }
+                code = timeout ? "HR_TIMEOUT" : "HR_UNAVAILABLE";
+                errorType = timeout ? ErrorType.TIMEOUT : ErrorType.CONNECTION;
+                message = timeout ? "HR 응답 시간이 초과되었습니다." : "HR 서비스를 사용할 수 없습니다.";
             } else {
-                process.setErrorCode("EXT_TIMEOUT");
-                process.setErrorType(ErrorType.TIMEOUT.name());
-                process.setErrorMessage("외부 시스템 응답 시간이 초과되었습니다.");
+                code = ex instanceof DataAccessException ? "DATA_WRITE_FAILED" : "INTERNAL_ERROR";
+                errorType = ex instanceof DataAccessException ? ErrorType.DATABASE : ErrorType.INTERNAL;
+                message = "회원가입 처리에 실패했습니다.";
             }
+            String stepStatus = errorType == ErrorType.TIMEOUT
+                    ? BusinessStepStatus.TIMEOUT.name() : BusinessStepStatus.FAILED.name();
+            selectStepFailed(processId, currentStepId, currentService, traceId, stepStatus, code, errorType, message);
+            List<String> steps = List.of("CHECK_HR_EMPLOYEE", "CHECK_DORMANT_MEMBER", "CHECK_EXTERNAL_ELIGIBILITY", "SAVE_MEMBER");
+            for (String step : steps.subList(steps.indexOf(currentStepId) + 1, steps.size())) {
+                String service = switch (step) {
+                    case "CHECK_DORMANT_MEMBER" -> "Dormant Service";
+                    case "CHECK_EXTERNAL_ELIGIBILITY" -> "External Service";
+                    default -> "Member DB";
+                };
+                selectStepNotExecuted(processId, step, service, "이전 단계 실패로 미실행", traceId);
+            }
+            process.setStatus(BusinessProcessStatus.FAILED.name());
+            process.setErrorCode(code);
+            process.setErrorType(errorType.name());
+            process.setErrorMessage(message);
             process.setEndTime(OffsetDateTime.now());
             process.setElapsedMs(Duration.between(startTime, process.getEndTime()).toMillis());
             memberMapper.updateProcess(process);
-            recordEvent(processId, null, "PROCESS_FAILED", "Member Service", "회원가입 실패", BusinessStepStatus.FAILED.name(), traceId);
-            String failedStepId = "HR_NOT_ACTIVE".equals(ex.getMessage()) ? "CHECK_HR_EMPLOYEE" : "CHECK_EXTERNAL_ELIGIBILITY";
-            String failedServiceName = "HR_NOT_ACTIVE".equals(ex.getMessage()) ? "HR Service" : "External Service";
-            String failedMessage = "HR_NOT_ACTIVE".equals(ex.getMessage()) ? "정상 직원이 아닙니다." : "외부 시스템 응답 시간이 초과되었습니다.";
-            String failedStatus = "HR_NOT_ACTIVE".equals(ex.getMessage()) ? BusinessStepStatus.FAILED.name() : BusinessStepStatus.TIMEOUT.name();
-            String failedErrorCode = "HR_NOT_ACTIVE".equals(ex.getMessage()) ? "HR_NOT_ACTIVE" : "EXT_TIMEOUT";
-            recordTrace(traceId, processId, vo.getMemberNo(), failedStepId, "REQUEST_FAILED", failedServiceName, failedMessage, failedStatus, process.getElapsedMs(), failedErrorCode, failedMessage);
+            recordEvent(processId, null, "PROCESS_FAILED", currentService, message, BusinessProcessStatus.FAILED.name(), traceId);
+            recordTrace(traceId, processId, vo.getMemberNo(), currentStepId, "REQUEST_FAILED", currentService,
+                    message, stepStatus, process.getElapsedMs(), code, message);
             MemberSignupVo response = new MemberSignupVo();
             response.setProcessId(processId);
             response.setProcessType(process.getProcessType());
@@ -138,6 +167,9 @@ public class MemberService {
             response.setMemberNo(vo.getMemberNo());
             response.setMemberName(vo.getMemberName());
             response.setStatus("FAILED");
+            response.setErrorCode(code);
+            response.setErrorType(errorType.name());
+            response.setMessage(message);
             return response;
         }
     }
@@ -178,24 +210,35 @@ public class MemberService {
         step.setServiceName(serviceName);
         step.setStatus(BusinessStepStatus.SUCCESS.name());
         step.setEndTime(OffsetDateTime.now());
+        step.setElapsedMs(selectElapsedMs(processId, stepId, step.getEndTime()));
         memberMapper.updateProcessStep(step);
         recordEvent(processId, stepId, "STEP_SUCCEEDED", serviceName, message, BusinessStepStatus.SUCCESS.name(), traceId);
         recordTrace(traceId, processId, null, stepId, "STEP_SUCCEEDED", serviceName, message, BusinessStepStatus.SUCCESS.name(), step.getElapsedMs(), null, null);
     }
 
-    private void selectStepTimeout(String processId, String stepId, String serviceName, String message, String traceId) {
+    private void selectStepFailed(String processId, String stepId, String serviceName, String traceId,
+            String status, String code, ErrorType type, String message) {
         MemberProcessStepVo step = new MemberProcessStepVo();
         step.setProcessId(processId);
         step.setStepId(stepId);
         step.setServiceName(serviceName);
-        step.setStatus(BusinessStepStatus.TIMEOUT.name());
-        step.setErrorCode("EXT_TIMEOUT");
-        step.setErrorType(ErrorType.TIMEOUT.name());
-        step.setErrorMessage("외부 시스템 응답 시간이 초과되었습니다.");
+        step.setStatus(status);
+        step.setErrorCode(code);
+        step.setErrorType(type.name());
+        step.setErrorMessage(message);
         step.setEndTime(OffsetDateTime.now());
+        step.setElapsedMs(selectElapsedMs(processId, stepId, step.getEndTime()));
         memberMapper.updateProcessStep(step);
-        recordEvent(processId, stepId, "STEP_TIMEOUT", serviceName, message, BusinessStepStatus.TIMEOUT.name(), traceId);
-        recordTrace(traceId, processId, null, stepId, "STEP_TIMEOUT", serviceName, message, BusinessStepStatus.TIMEOUT.name(), step.getElapsedMs(), "EXT_TIMEOUT", step.getErrorMessage());
+        recordEvent(processId, stepId, "STEP_FAILED", serviceName, message, status, traceId);
+        recordTrace(traceId, processId, null, stepId, "STEP_FAILED", serviceName, message,
+                status, step.getElapsedMs(), code, message);
+    }
+
+    private long selectElapsedMs(String processId, String stepId, OffsetDateTime end) {
+        return memberMapper.selectProcessSteps(processId).stream()
+                .filter(step -> stepId.equals(step.getStepId()) && step.getStartTime() != null)
+                .mapToLong(step -> Math.max(0L, Duration.between(step.getStartTime(), end).toMillis()))
+                .max().orElse(0L);
     }
 
     private void selectStepNotExecuted(String processId, String stepId, String serviceName, String message, String traceId) {

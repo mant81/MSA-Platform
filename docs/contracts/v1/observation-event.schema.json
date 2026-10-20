@@ -1,0 +1,284 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:msa:observation-event:1.0",
+  "title": "Publisher observation event v1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "eventId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "eventType": {
+      "enum": [
+        "PROCESS_STARTED",
+        "PROCESS_FINISHED",
+        "STEP_STARTED",
+        "STEP_FINISHED",
+        "ERROR_RECORDED"
+      ]
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "environment": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "serviceName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "instanceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "deploymentVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "traceId": {
+      "type": "string",
+      "pattern": "^(?!0{32}$)[0-9a-f]{32}$"
+    },
+    "spanId": {
+      "type": "string",
+      "pattern": "^(?!0{16}$)[0-9a-f]{16}$"
+    },
+    "parentSpanId": {
+      "type": "string",
+      "pattern": "^(?!0{16}$)[0-9a-f]{16}$"
+    },
+    "legacyTraceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "processId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:-]{1,100}$"
+    },
+    "processType": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "processDefinitionVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "aggregateVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "stepId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "stepExecutionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "parentStepExecutionId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "durationMs": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "status": {
+      "type": "string"
+    },
+    "businessKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "errorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "causedByErrorId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "errorCode": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]{0,99}$"
+    },
+    "errorCategory": {
+      "enum": [
+        "BUSINESS",
+        "VALIDATION",
+        "AUTHENTICATION",
+        "AUTHORIZATION",
+        "DEPENDENCY",
+        "TIMEOUT",
+        "DATA",
+        "INTERNAL"
+      ]
+    },
+    "retryable": {
+      "type": "boolean"
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "errorGroupId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "eventId",
+    "eventType",
+    "occurredAt",
+    "environment",
+    "serviceName",
+    "instanceId",
+    "deploymentVersion"
+  ],
+  "oneOf": [
+    {
+      "properties": {
+        "eventType": {
+          "const": "PROCESS_STARTED"
+        },
+        "status": {
+          "enum": [
+            "RUNNING"
+          ]
+        }
+      },
+      "required": [
+        "processId",
+        "processType",
+        "processDefinitionVersion",
+        "aggregateVersion",
+        "traceId",
+        "spanId",
+        "status"
+      ]
+    },
+    {
+      "properties": {
+        "eventType": {
+          "const": "PROCESS_FINISHED"
+        },
+        "status": {
+          "enum": [
+            "SUCCEEDED",
+            "REJECTED",
+            "FAILED",
+            "TIMED_OUT",
+            "CANCELLED"
+          ]
+        }
+      },
+      "required": [
+        "processId",
+        "processType",
+        "processDefinitionVersion",
+        "aggregateVersion",
+        "traceId",
+        "spanId",
+        "status",
+        "durationMs"
+      ]
+    },
+    {
+      "properties": {
+        "eventType": {
+          "const": "STEP_STARTED"
+        },
+        "status": {
+          "enum": [
+            "RUNNING"
+          ]
+        }
+      },
+      "required": [
+        "processId",
+        "processType",
+        "processDefinitionVersion",
+        "aggregateVersion",
+        "traceId",
+        "spanId",
+        "status",
+        "stepId",
+        "stepExecutionId",
+        "attempt"
+      ]
+    },
+    {
+      "properties": {
+        "eventType": {
+          "const": "STEP_FINISHED"
+        },
+        "status": {
+          "enum": [
+            "SUCCEEDED",
+            "REJECTED",
+            "FAILED",
+            "TIMED_OUT",
+            "CANCELLED",
+            "SKIPPED"
+          ]
+        }
+      },
+      "required": [
+        "processId",
+        "processType",
+        "processDefinitionVersion",
+        "aggregateVersion",
+        "traceId",
+        "spanId",
+        "status",
+        "stepId",
+        "stepExecutionId",
+        "attempt",
+        "durationMs"
+      ]
+    },
+    {
+      "properties": {
+        "eventType": {
+          "const": "ERROR_RECORDED"
+        }
+      },
+      "required": [
+        "traceId",
+        "spanId",
+        "errorId",
+        "errorCode",
+        "errorCategory",
+        "retryable"
+      ],
+      "not": {
+        "required": [
+          "status"
+        ]
+      }
+    }
+  ]
+}

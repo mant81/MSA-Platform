@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.msa.auth.mapper.AuthRefreshMapper">
+    <select id="selectSession" resultType="com.msa.auth.vo.RefreshSessionVo">
+        select token_hash, family_id, expires_at, used_at, revoked_at from refresh_session where token_hash = #{tokenHash}
+    </select>
+    <select id="selectFamilyForUpdate" resultType="com.msa.auth.vo.RefreshFamilyVo">
+        select family_id, user_id, expires_at, revoked_at from refresh_family where family_id = #{familyId} for update
+    </select>
+    <insert id="insertFamily">
+        insert into refresh_family(family_id, user_id, expires_at) values (#{familyId}, #{userId}, #{expiresAt})
+    </insert>
+    <insert id="insertSession">
+        insert into refresh_session(token_hash, family_id, expires_at) values (#{tokenHash}, #{familyId}, #{expiresAt})
+    </insert>
+    <update id="markUsed">
+        update refresh_session set used_at = #{now} where token_hash = #{tokenHash} and used_at is null and revoked_at is null
+    </update>
+    <update id="revokeFamily">
+        update refresh_family set revoked_at = coalesce(revoked_at, #{now}) where family_id = #{familyId}
+    </update>
+    <update id="revokeSessions">
+        update refresh_session set revoked_at = coalesce(revoked_at, #{now}) where family_id = #{familyId}
+    </update>
+    <insert id="insertAudit">
+        insert into auth_security_event(event_id, user_id, family_id, event_type, created_at)
+        values (#{eventId}, #{userId}, #{familyId}, #{eventType}, #{now})
+    </insert>
+</mapper>

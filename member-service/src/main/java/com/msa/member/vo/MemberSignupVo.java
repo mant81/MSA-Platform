@@ -12,4 +12,7 @@ public class MemberSignupVo {
     private String memberNo;
     private String memberName;
     private String status;
+    private String errorCode;
+    private String errorType;
+    private String message;
 }

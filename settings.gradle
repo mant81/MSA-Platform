@@ -1,0 +1,6 @@
+pluginManagement {
+    repositories { mavenCentral(); gradlePluginPortal() }
+}
+
+rootProject.name = 'msa-platform'
+include 'msa-core', 'trace-service', 'gateway-service', 'config-service', 'auth-service', 'hr-service', 'member-service', 'test-service'

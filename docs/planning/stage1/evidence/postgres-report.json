@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-10-20T00:07:09.148324+00:00",
+  "image": "postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+  "serverVersion": "18.6 (Debian 18.6-1.pgdg13+2)",
+  "network": "none; temporary trust-auth fixture; no published ports",
+  "results": [
+    {
+      "id": "PG-SCHEMA",
+      "status": "PASS",
+      "detail": "existing Trace schema and insert/read on PostgreSQL"
+    },
+    {
+      "id": "PG-STOP",
+      "status": "PASS",
+      "detail": "database unavailable after owned-container stop"
+    },
+    {
+      "id": "PG-RESTART",
+      "status": "PASS",
+      "detail": "fixture data retained across DB stop/start"
+    }
+  ],
+  "cleanup": "owned container and anonymous volume removed",
+  "limitations": "No service JDBC integration, HA, backup restore, migration or production recovery validation."
+}

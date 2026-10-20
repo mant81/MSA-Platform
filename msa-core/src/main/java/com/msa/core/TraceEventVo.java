@@ -9,6 +9,10 @@ public class TraceEventVo {
     private String processType;
     private String stepId;
     private String serviceName;
+    private String sourceService;
+
+    public String getSourceService() { return sourceService; }
+    public void setSourceService(String sourceService) { this.sourceService = sourceService; }
     private String eventType;
     private String httpMethod;
     private String path;

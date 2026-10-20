@@ -5,14 +5,14 @@
 <mapper namespace="com.msa.trace.mapper.TraceEventMapper">
     <insert id="insert" parameterType="com.msa.core.TraceEventVo" useGeneratedKeys="true" keyProperty="id">
         insert into trace_event
-        (trace_id, process_id, business_key, process_type, step_id, service_name, event_type, http_method, path, status, elapsed_ms, error_code, error_message, created_at)
+        (trace_id, process_id, business_key, process_type, step_id, service_name, source_service, event_type, http_method, path, status, elapsed_ms, error_code, error_message, created_at)
         values
-        (#{traceId}, #{processId}, #{businessKey}, #{processType}, #{stepId}, #{serviceName}, #{eventType}, #{httpMethod}, #{path}, #{status}, #{elapsedMs}, #{errorCode}, #{errorMessage}, #{createdAt})
+        (#{traceId}, #{processId}, #{businessKey}, #{processType}, #{stepId}, #{serviceName}, #{sourceService}, #{eventType}, #{httpMethod}, #{path}, #{status}, #{elapsedMs}, #{errorCode}, #{errorMessage}, #{createdAt})
     </insert>
 
     <select id="selectAll" resultType="com.msa.core.TraceEventVo">
         select id, trace_id as traceId, process_id as processId, business_key as businessKey,
-               process_type as processType, step_id as stepId, service_name as serviceName,
+               process_type as processType, step_id as stepId, service_name as serviceName, source_service as sourceService,
                event_type as eventType, http_method as httpMethod, path, status,
                elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
                created_at as createdAt
@@ -22,7 +22,7 @@
 
     <select id="selectByTraceId" parameterType="string" resultType="com.msa.core.TraceEventVo">
         select id, trace_id as traceId, process_id as processId, business_key as businessKey,
-               process_type as processType, step_id as stepId, service_name as serviceName,
+               process_type as processType, step_id as stepId, service_name as serviceName, source_service as sourceService,
                event_type as eventType, http_method as httpMethod, path, status,
                elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
                created_at as createdAt
@@ -33,7 +33,7 @@
 
     <select id="selectByProcessId" parameterType="string" resultType="com.msa.core.TraceEventVo">
         select id, trace_id as traceId, process_id as processId, business_key as businessKey,
-               process_type as processType, step_id as stepId, service_name as serviceName,
+               process_type as processType, step_id as stepId, service_name as serviceName, source_service as sourceService,
                event_type as eventType, http_method as httpMethod, path, status,
                elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
                created_at as createdAt
@@ -44,7 +44,7 @@
 
     <select id="selectByProcessIdAndTraceId" resultType="com.msa.core.TraceEventVo">
         select id, trace_id as traceId, process_id as processId, business_key as businessKey,
-               process_type as processType, step_id as stepId, service_name as serviceName,
+               process_type as processType, step_id as stepId, service_name as serviceName, source_service as sourceService,
                event_type as eventType, http_method as httpMethod, path, status,
                elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
                created_at as createdAt
@@ -56,7 +56,7 @@
 
     <select id="selectByStatus" parameterType="string" resultType="com.msa.core.TraceEventVo">
         select id, trace_id as traceId, process_id as processId, business_key as businessKey,
-               process_type as processType, step_id as stepId, service_name as serviceName,
+               process_type as processType, step_id as stepId, service_name as serviceName, source_service as sourceService,
                event_type as eventType, http_method as httpMethod, path, status,
                elapsed_ms as elapsedMs, error_code as errorCode, error_message as errorMessage,
                created_at as createdAt

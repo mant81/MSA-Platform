@@ -6,6 +6,7 @@ create table if not exists trace_event (
     process_type varchar(100),
     step_id varchar(100),
     service_name varchar(100),
+    source_service varchar(100) not null,
     event_type varchar(50) not null,
     http_method varchar(20),
     path varchar(500),

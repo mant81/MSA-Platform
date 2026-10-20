@@ -2,7 +2,7 @@ package com.msa.member.config;
 
 import com.msa.core.TraceEventType;
 import com.msa.core.TraceEventVo;
-import com.msa.member.mapper.MemberMapper;
+import com.msa.member.client.TraceClient;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 import jakarta.servlet.FilterChain;
@@ -10,18 +10,21 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.client.RestClient;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 @Component
 public class TraceFilter extends OncePerRequestFilter {
 
-    private final RestClient restClient;
+    private final TraceClient traceClient;
 
-    public TraceFilter(@Value("${app.trace-service-url:http://localhost:8090}") String traceServiceUrl) {
-        this.restClient = RestClient.builder().baseUrl(traceServiceUrl).build();
+    public TraceFilter(TraceClient traceClient) {
+        this.traceClient = traceClient;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().equals("/actuator/health") || request.getRequestURI().startsWith("/actuator/health/");
     }
 
     @Override
@@ -34,7 +37,10 @@ public class TraceFilter extends OncePerRequestFilter {
         insertTrace(traceId, request, TraceEventType.REQUEST_STARTED.name(), "RUNNING", 0L, null, null);
         try {
             filterChain.doFilter(request, response);
-            insertTrace(traceId, request, TraceEventType.REQUEST_COMPLETED.name(), "SUCCESS", System.currentTimeMillis() - start, null, null);
+            boolean failed = response.getStatus() >= 400;
+            insertTrace(traceId, request, failed ? TraceEventType.REQUEST_FAILED.name() : TraceEventType.REQUEST_COMPLETED.name(),
+                    failed ? "FAILED" : "SUCCESS", System.currentTimeMillis() - start,
+                    failed ? "HTTP_" + response.getStatus() : null, null);
         } catch (Exception ex) {
             insertTrace(traceId, request, TraceEventType.REQUEST_FAILED.name(), "FAILED", System.currentTimeMillis() - start, "INTERNAL", ex.getMessage());
             throw ex;
@@ -63,10 +69,6 @@ public class TraceFilter extends OncePerRequestFilter {
     }
 
     private void postTrace(TraceEventVo trace) {
-        restClient.post()
-                .uri("/trace-events")
-                .body(trace)
-                .retrieve()
-                .toBodilessEntity();
+        traceClient.insert(trace);
     }
 }

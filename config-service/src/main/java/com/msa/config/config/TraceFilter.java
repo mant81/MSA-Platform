@@ -2,6 +2,7 @@ package com.msa.config.config;
 
 import com.msa.core.TraceEventType;
 import com.msa.core.TraceEventVo;
+import com.msa.core.security.ServiceCredentials;
 import com.msa.config.mapper.ConfigMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.client.RestClient;
@@ -20,8 +21,13 @@ public class TraceFilter extends OncePerRequestFilter {
 
     private final RestClient restClient;
 
-    public TraceFilter(@Value("${app.trace-service-url:http://localhost:8090}") String traceServiceUrl) {
-        this.restClient = RestClient.builder().baseUrl(traceServiceUrl).build();
+    public TraceFilter(@Value("${app.trace-service-url:http://localhost:8090}") String traceServiceUrl, ServiceCredentials credentials) {
+        this.restClient = RestClient.builder().baseUrl(traceServiceUrl).defaultHeaders(headers -> credentials.apply(headers, "trace-service")).build();
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        return request.getRequestURI().equals("/actuator/health") || request.getRequestURI().startsWith("/actuator/health/");
     }
 
     @Override

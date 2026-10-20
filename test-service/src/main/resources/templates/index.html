@@ -86,12 +86,14 @@
                 <label>사용자명</label>
                 <input id="auth-user-name" value="테스트사용자">
                 <label>Password</label>
-                <input id="auth-password" value="1234" type="password">
+                <input id="auth-password" placeholder="12~64자 비밀번호" type="password" autocomplete="current-password">
                 <label>Auth Type</label>
                 <input id="auth-type" value="PASSWORD">
                 <div class="actions">
                     <button id="btn-auth-signup">회원가입</button>
                     <button id="btn-auth-login">로그인</button>
+                    <button id="btn-auth-refresh">토큰 갱신</button>
+                    <button id="btn-auth-logout">로그아웃</button>
                 </div>
             </div>
             <pre id="auth-result"></pre>

@@ -1,10 +1,15 @@
+let accessToken = null;
+let refreshToken = null;
+
 async function readJson(url, options = {}) {
-  const res = await fetch(url, options);
+  const publicAuth = /^\/api\/auth\/(signup|login|refresh|logout)$/.test(url);
+  const res = await fetch(url, { ...options, headers: publicAuth ? (options.headers || {}) : authHeaders(options.headers || {}) });
+  if (res.status === 204) return { success: true };
   return await res.json();
 }
 
 function authHeaders(extraHeaders = {}) {
-  const token = localStorage.getItem('msa_access_token');
+  const token = accessToken;
   return token ? { Authorization: `Bearer ${token}`, ...extraHeaders } : extraHeaders;
 }
 
@@ -107,7 +112,11 @@ document.getElementById('btn-auth-signup').addEventListener('click', async () =>
     body: JSON.stringify(body)
   });
   if (result.accessToken) {
-    localStorage.setItem('msa_access_token', result.accessToken);
+    accessToken = result.accessToken;
+    refreshToken = result.refreshToken;
+  } else {
+    accessToken = null;
+    refreshToken = null;
   }
   writeResult('auth-result', result);
   writeResult('token-result', { accessToken: result.accessToken, refreshToken: result.refreshToken });
@@ -125,7 +134,11 @@ document.getElementById('btn-auth-login').addEventListener('click', async () => 
     body: JSON.stringify(body)
   });
   if (result.accessToken) {
-    localStorage.setItem('msa_access_token', result.accessToken);
+    accessToken = result.accessToken;
+    refreshToken = result.refreshToken;
+  } else {
+    accessToken = null;
+    refreshToken = null;
   }
   writeResult('auth-result', result);
   writeResult('token-result', { accessToken: result.accessToken, refreshToken: result.refreshToken });
@@ -170,4 +183,27 @@ document.getElementById('btn-trace-by-both').addEventListener('click', async () 
   const processId = document.getElementById('process-id').value;
   const traceId = document.getElementById('trace-id').value;
   writeResult('trace-result', await readJson(`/api/trace/trace-events/process-id/${encodeURIComponent(processId)}/trace-id/${encodeURIComponent(traceId)}`, { headers: authHeaders() }));
+});
+
+document.getElementById('btn-auth-refresh').addEventListener('click', async () => {
+  const result = await readJson('/api/auth/refresh', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken })
+  });
+  accessToken = result.accessToken || null;
+  refreshToken = result.refreshToken || null;
+  writeResult('auth-result', result);
+  writeResult('token-result', { accessToken, refreshToken });
+});
+
+document.getElementById('btn-auth-logout').addEventListener('click', async () => {
+  try {
+    const result = await readJson('/api/auth/logout', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken })
+    });
+    writeResult('auth-result', result);
+  } finally {
+    accessToken = null;
+    refreshToken = null;
+    writeResult('token-result', { message: '세션을 종료했습니다.' });
+  }
 });

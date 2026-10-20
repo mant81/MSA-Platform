@@ -1,8 +1,21 @@
 # MSA PLATFORM
 
-MSA PLATFORM은 Spring Boot 3, Java 21, Gradle 기반의 트레이스 중심 MSA 샘플 플랫폼입니다.
+MSA PLATFORM은 Spring Boot 4.1.1, Java 25, Gradle 9.8.2 기반의 트레이스 중심 MSA 샘플 플랫폼입니다.
+
+3단계 인증·보안 구현과 검증 결과는 [3단계 수행 결과](docs/planning/stage3/RESULTS.md)를 참고합니다.
 
 ## 구성 서비스
+
+개발 순서와 단계별 완료 기준은 [MSA 개발 로드맵](docs/MSA_DEVELOPMENT_ROADMAP.md)을 참고합니다. Redis와 Kafka는 후속 단계에서 적용합니다.
+
+차세대 프로젝트의 처리 flow·오류·서비스 장애 여부에 대한 기반 설계는 [관측·운영 기반 설계](docs/architecture/OBSERVABILITY_FOUNDATION.md)를 참고합니다.
+
+현행 구현의 재사용 범위와 차세대 도입에 필요한 잔여 작업·선행 조건·공수·인수 기준은 [차세대 도입 WBS](docs/planning/MSA_ADOPTION_WBS.md)에 정리했습니다. [엑셀용 CSV](docs/planning/MSA_ADOPTION_WBS.csv)도 제공합니다.
+
+WBS 1단계의 범위·계약·격리 시험 결과와 미확정 항목은 [1단계 수행 결과](docs/planning/stage1/RESULTS.md)를 참고합니다.
+
+Gateway·회원가입·UI 연결 복구 및 장애 회귀 검증은 [2단계 수행 결과](docs/planning/stage2/RESULTS.md)를 참고합니다. 해당 문서는 2단계 수행 시점의 기록입니다. 현재 인증·권한·Refresh 정책과 실행 설정은 [보안 기준](docs/security/SECURITY_BASELINE.md)을 따릅니다.
+
 - `gateway-service`
 - `trace-service`
 - `member-service`
@@ -119,7 +132,8 @@ MSA PLATFORM은 Spring Boot 3, Java 21, Gradle 기반의 트레이스 중심 MSA
 - JWT 발급은 `auth-service`가 담당합니다.
 - JWT 검증과 차단은 `gateway-service`가 담당합니다.
 - 보호된 요청은 `Authorization: Bearer <JWT>` 형식을 사용합니다.
-- 샘플 JWT는 실제 서명 검증 대신 형식 기반 필터를 사용합니다.
+- JWT는 RS256 서명·issuer/audience·만료 및 역할을 Gateway와 각 서비스에서 검증합니다. 내부 호출은 별도 서비스 자격증명도 필요합니다.
+- 비밀번호는 BCrypt로 저장하고 Refresh Token은 DB 해시 기반으로 회전·폐기합니다. 키·개발 관리자 설정은 [보안 기준](docs/security/SECURITY_BASELINE.md)을 참고합니다.
 
 ## auth-service 확장 구조
 - `com.msa.auth.auth.strategy`
@@ -250,61 +264,31 @@ MSA PLATFORM은 Spring Boot 3, Java 21, Gradle 기반의 트레이스 중심 MSA
 - `hr-service`: `8084`
 - `test-service`: `8099`
 
-## 실행 방법
-각 서비스 폴더에서 아래처럼 실행합니다.
+## 빌드 및 실행
+
+Java 25를 설치하고 `JAVA_HOME`을 지정합니다. 저장소 루트에서 실행합니다.
 
 ```bash
-gradlew bootRun
+./gradlew build --max-workers=2
+python tools/security/start_service.py trace-service
 ```
 
-Gradle wrapper가 없으면:
+공통 라이브러리는 Gradle 프로젝트 의존성으로 먼저 빌드됩니다. 보안 키/자격증명 없이 서비스는 시작하지 않습니다. 단일 VM 개발 환경에서는 다음과 같이 준비하고 각 명령을 별도 터미널에서 실행합니다.
 
 ```bash
-gradle bootRun
+python tools/security/prepare_local.py
+python tools/security/start_service.py trace-service
+python tools/security/start_service.py gateway-service
+python tools/security/start_service.py config-service
+python tools/security/start_service.py auth-service
+python tools/security/start_service.py hr-service
+python tools/security/start_service.py member-service
+python tools/security/start_service.py test-service
 ```
 
-### 실행 예시
-`trace-service`
-```bash
-cd trace-service
-gradlew bootRun
-```
+개발 관리자 자격증명과 키는 ignored build/security/local-v2에만 생성되며 출력하지 않습니다. 운영 설정은 [보안 기준](docs/security/SECURITY_BASELINE.md)을 따릅니다. Refresh/로그아웃 및 권한 검증을 포함한 격리 회귀는 `python tools/verification/stage1_baseline.py --stage3 --java "$JAVA_HOME/bin/java"`로 실행합니다.
 
-`gateway-service`
-```bash
-cd gateway-service
-gradlew bootRun
-```
-
-`config-service`
-```bash
-cd config-service
-gradlew bootRun
-```
-
-`auth-service`
-```bash
-cd auth-service
-gradlew bootRun
-```
-
-`hr-service`
-```bash
-cd hr-service
-gradlew bootRun
-```
-
-`member-service`
-```bash
-cd member-service
-gradlew bootRun
-```
-
-`test-service`
-```bash
-cd test-service
-gradlew bootRun
-```
+라이브러리 버전은 루트 `build.gradle`의 Spring Boot / Spring Cloud BOM에서 관리합니다. MyBatis 4.1.0과 Lombok 1.18.48을 사용합니다. H2는 메모리 DB이므로 서비스 재시작 시 데이터가 초기화됩니다.
 
 ## 주의 사항
 - 이 플랫폼은 중앙 `trace-service`를 사용합니다.
