@@ -74,6 +74,10 @@ public class ServletSecurityConfiguration {
               } else if ("member-service".equals(credentials.id())) {
                 auth.requestMatchers(HttpMethod.GET, "/members/processes", "/members/processes/**")
                     .hasAnyRole("OPERATIONS", "ADMIN")
+                    .requestMatchers(HttpMethod.POST, "/members/requests/*/allow-retry")
+                    .hasRole("ADMIN")
+                    .requestMatchers(HttpMethod.GET, "/members/requests", "/members/requests/**")
+                    .hasAnyRole("OPERATIONS", "ADMIN")
                     .requestMatchers(HttpMethod.POST, "/members")
                     .hasRole("ADMIN")
                     .requestMatchers("/members", "/members/**")

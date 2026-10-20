@@ -22,7 +22,7 @@ class DatabaseMigrationTest {
   void freshInstallRepeatAndRestartPreserveRows() {
     String url = url("fresh");
     var flyway = Flyway.configure().dataSource(url, "sa", "").load();
-    assertEquals(4, flyway.migrate().migrationsExecuted);
+    assertEquals(5, flyway.migrate().migrationsExecuted);
     var jdbc = new JdbcTemplate(new DriverManagerDataSource(url, "sa", ""));
     jdbc.update(
         "insert into member(member_no,member_name,status) values ('persisted','Fixture','ACTIVE')");
@@ -47,7 +47,7 @@ class DatabaseMigrationTest {
         () -> Flyway.configure().dataSource(ds).load().migrate());
     var flyway = Flyway.configure().dataSource(ds).baselineVersion("1").load();
     flyway.baseline();
-    assertEquals(3, flyway.migrate().migrationsExecuted);
+    assertEquals(4, flyway.migrate().migrationsExecuted);
     assertEquals(
         2, new JdbcTemplate(ds).queryForObject("select count(*) from member", Integer.class));
   }

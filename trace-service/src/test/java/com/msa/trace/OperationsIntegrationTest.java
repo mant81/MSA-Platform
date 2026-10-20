@@ -142,6 +142,57 @@ class OperationsIntegrationTest {
   }
 
   @Test
+  void stepReverseDeliveryDuplicateAndRetriesRemainIndependent() {
+    String process = UUID.randomUUID().toString();
+    String execution = UUID.randomUUID().toString();
+    var done = step(process, execution, "STEP_FAILED", 5, 1);
+    done.setStatus("TIMEOUT");
+    assertEquals(1, traces.insert(done));
+    assertEquals(0, traces.insert(done));
+    traces.insert(step(process, execution, "STEP_STARTED", 2, 1));
+    traces.insert(step(process, execution, "STEP_STARTED", 99, 1));
+    traces.insert(step(process, UUID.randomUUID().toString(), "STEP_SUCCEEDED", 10, 2));
+    var forged = step(process, UUID.randomUUID().toString(), "STEP_STARTED", 100, 1);
+    forged.setSourceService("hr-service");
+    traces.insert(forged);
+    var page = operations.selectFlow(0, 1, process, null, null);
+    var steps = (List<Map<String, Object>>) page.get("steps");
+    assertEquals(2, steps.size());
+    assertEquals("TIMED_OUT", steps.getFirst().get("status"));
+    assertEquals("SUCCEEDED", steps.getLast().get("status"));
+    assertEquals("UNVERIFIED", page.get("completeness"));
+    assertTrue(
+        page.get("completenessDetails").toString().contains("EXPECTED_EVENT_MANIFEST_UNAVAILABLE"));
+    // Projection scope is process-wide, independent of timeline pagination.
+    assertEquals(1, ((List<?>) page.get("events")).size());
+  }
+
+  TraceEventVo step(String process, String execution, String type, long version, int attempt) {
+    var e = event(process, type, "RUNNING", version);
+    e.setStepId("CHECK_HR_EMPLOYEE");
+    e.setStepExecutionId(execution);
+    e.setAttempt(attempt);
+    return e;
+  }
+
+  @Test
+  void eventTimeWindowIsHalfOpenAndRejectsInvertedBounds() {
+    String process = UUID.randomUUID().toString();
+    var first = event(process, "REQUEST_STARTED", "RUNNING", 1);
+    var last = event(process, "REQUEST_COMPLETED", "SUCCESS", 10);
+    var start = OffsetDateTime.parse("2026-10-01T00:00:00Z");
+    first.setCreatedAt(start);
+    last.setCreatedAt(start.plusHours(1));
+    traces.insert(first);
+    traces.insert(last);
+    var page = operations.selectFlow(0, 100, process, null, start, start.plusHours(1));
+    assertEquals(1, ((List<?>) page.get("events")).size());
+    assertThrows(
+        org.springframework.web.server.ResponseStatusException.class,
+        () -> operations.selectFlow(0, 100, process, null, start, start));
+  }
+
+  @Test
   void malformedW3cContextGetsFreshIdsAndValidParentIsPreserved() {
     var fresh =
         TraceContext.receive("00-" + "0".repeat(32) + "-" + "0".repeat(16) + "-01", "legacy");

@@ -13,7 +13,8 @@ public interface OperationsMapper {
       @Param("limit") int limit,
       @Param("processId") String processId,
       @Param("businessKey") String businessKey,
-      @Param("since") OffsetDateTime since);
+      @Param("since") OffsetDateTime since,
+      @Param("until") OffsetDateTime until);
 
   List<Map<String, Object>> selectErrors(@Param("since") OffsetDateTime since);
 

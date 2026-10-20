@@ -81,6 +81,7 @@ class ReliableSignupTest {
   }
 
   @Autowired SignupRequestService requests;
+  @Autowired SignupRecoveryService recovery;
   @Autowired TraceClient traces;
   @Autowired JdbcTemplate jdbc;
   @MockitoBean HrDependencyService hr;
@@ -132,6 +133,190 @@ class ReliableSignupTest {
         0,
         jdbc.queryForObject(
             "select count(*) from trace_outbox where delivered_at is null", Integer.class));
+  }
+
+  String failedClaim(MemberVo member, String key) {
+    doThrow(new org.springframework.dao.DataIntegrityViolationException("Rollback fixture"))
+        .when(hr)
+        .selectEmployee(eq(member.getMemberNo()), anyString());
+    assertThrows(
+        org.springframework.dao.DataAccessException.class,
+        () -> requests.insert(member, "failed", "owner", key));
+    doReturn(Map.of("active", true)).when(hr).selectEmployee(eq(member.getMemberNo()), anyString());
+    return jdbc.queryForObject(
+        "select request_key from signup_request where member_no=?",
+        String.class,
+        member.getMemberNo());
+  }
+
+  @Test
+  void approvedRecoveryUsesOriginalPayloadAndReturnsCachedResult() {
+    var member = member();
+    String key = UUID.randomUUID().toString();
+    String hash = failedClaim(member, key);
+    var approved = recovery.allowRetry(hash, "DB_ROLLBACK_CONFIRMED", "admin", "approval-trace");
+    assertEquals("RETRY_ALLOWED", approved.getStatus());
+    assertEquals("failed", approved.getInitialTraceId());
+    assertEquals(
+        0,
+        jdbc.queryForObject(
+            "select count(*) from member where member_no=?", Integer.class, member.getMemberNo()));
+    member.setMemberName("Changed");
+    assertEquals(
+        409,
+        assertThrows(
+                ResponseStatusException.class, () -> requests.insert(member, "retry", "owner", key))
+            .getStatusCode()
+            .value());
+    member.setMemberName("Fixture");
+    var response = requests.insert(member, "retry", "owner", key);
+    assertEquals(
+        response.getProcessId(), requests.insert(member, "cached", "owner", key).getProcessId());
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "select retry_count from signup_request where request_key=?", Integer.class, hash));
+    assertEquals(2, recovery.selectAudit(hash).size());
+    assertEquals(
+        "COMPLETED",
+        jdbc.queryForObject(
+            "select status from signup_request where request_key=?", String.class, hash));
+    String json =
+        tools.jackson.databind.json.JsonMapper.builder().build().writeValueAsString(approved);
+    assertFalse(json.contains("fingerprint"));
+    assertFalse(json.contains("responseJson"));
+    assertFalse(json.contains("hasResponse"));
+  }
+
+  @Test
+  void concurrentApprovalAndRetryHaveOneWinner() throws Exception {
+    var member = member();
+    String key = UUID.randomUUID().toString();
+    String hash = failedClaim(member, key);
+    var start = new CountDownLatch(1);
+    try (var pool = Executors.newFixedThreadPool(2)) {
+      var a =
+          pool.submit(
+              () -> {
+                start.await();
+                try {
+                  recovery.allowRetry(hash, "PROCESS_CRASH_CONFIRMED", "admin-a", "trace");
+                  return 200;
+                } catch (ResponseStatusException e) {
+                  return e.getStatusCode().value();
+                }
+              });
+      var b =
+          pool.submit(
+              () -> {
+                start.await();
+                try {
+                  recovery.allowRetry(hash, "PROCESS_CRASH_CONFIRMED", "admin-b", "trace");
+                  return 200;
+                } catch (ResponseStatusException e) {
+                  return e.getStatusCode().value();
+                }
+              });
+      start.countDown();
+      var results = new ArrayList<>(List.of(a.get(), b.get()));
+      Collections.sort(results);
+      assertEquals(List.of(200, 409), results);
+    }
+    assertEquals(1, recovery.selectAudit(hash).size());
+    var retryStart = new CountDownLatch(1);
+    try (var pool = Executors.newFixedThreadPool(6)) {
+      var futures = new ArrayList<Future<Integer>>();
+      for (int i = 0; i < 6; i++)
+        futures.add(
+            pool.submit(
+                () -> {
+                  retryStart.await();
+                  try {
+                    requests.insert(member, "retry", "owner", key);
+                    return 200;
+                  } catch (ResponseStatusException e) {
+                    return e.getStatusCode().value();
+                  }
+                }));
+      retryStart.countDown();
+      for (var f : futures) assertTrue(List.of(200, 409).contains(f.get(10, TimeUnit.SECONDS)));
+    }
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "select count(*) from member where member_no=?", Integer.class, member.getMemberNo()));
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "select count(*) from member_process where business_key=?",
+            Integer.class,
+            member.getMemberNo()));
+    assertEquals(
+        1,
+        jdbc.queryForObject(
+            "select retry_count from signup_request where request_key=?", Integer.class, hash));
+  }
+
+  @Test
+  void liveLegacyExhaustedAndCommittedClaimsCannotBeReleased() {
+    var member = member();
+    String hash = failedClaim(member, UUID.randomUUID().toString());
+    for (String state : List.of("RUNNING", "COMPLETED")) {
+      jdbc.update("update signup_request set status=? where request_key=?", state, hash);
+      assertEquals(
+          409,
+          assertThrows(
+                  ResponseStatusException.class,
+                  () -> recovery.allowRetry(hash, "DB_ROLLBACK_CONFIRMED", "admin", "trace"))
+              .getStatusCode()
+              .value());
+    }
+    jdbc.update(
+        "update signup_request set status='RECOVERY_REQUIRED',owner_id=null where request_key=?",
+        hash);
+    assertThrows(
+        ResponseStatusException.class,
+        () -> recovery.allowRetry(hash, "DB_ROLLBACK_CONFIRMED", "admin", "trace"));
+    jdbc.update(
+        "update signup_request set owner_id='owner',retry_count=3 where request_key=?", hash);
+    assertThrows(
+        ResponseStatusException.class,
+        () -> recovery.allowRetry(hash, "DB_ROLLBACK_CONFIRMED", "admin", "trace"));
+    jdbc.update(
+        "update signup_request set retry_count=0,response_json='{}' where request_key=?", hash);
+    assertThrows(
+        ResponseStatusException.class,
+        () -> recovery.allowRetry(hash, "DB_ROLLBACK_CONFIRMED", "admin", "trace"));
+    jdbc.update("update signup_request set response_json=null where request_key=?", hash);
+    jdbc.update(
+        "insert into member(member_no,member_name,status) values (?,?,'ACTIVE')",
+        member.getMemberNo(),
+        member.getMemberName());
+    assertThrows(
+        ResponseStatusException.class,
+        () -> recovery.allowRetry(hash, "DB_ROLLBACK_CONFIRMED", "admin", "trace"));
+    assertTrue(recovery.selectAudit(hash).isEmpty());
+  }
+
+  @Test
+  void failedAuditRollsBackApprovalAndReasonIsAnAllowlist() {
+    var member = member();
+    String hash = failedClaim(member, UUID.randomUUID().toString());
+    assertEquals(
+        400,
+        assertThrows(
+                ResponseStatusException.class,
+                () -> recovery.allowRetry(hash, "arbitrary-secret-text", "admin", "trace"))
+            .getStatusCode()
+            .value());
+    assertThrows(
+        org.springframework.dao.DataAccessException.class,
+        () -> recovery.allowRetry(hash, "DB_ROLLBACK_CONFIRMED", "x".repeat(101), "trace"));
+    assertEquals(
+        "RECOVERY_REQUIRED",
+        jdbc.queryForObject(
+            "select status from signup_request where request_key=?", String.class, hash));
+    assertTrue(recovery.selectAudit(hash).isEmpty());
   }
 
   @Test

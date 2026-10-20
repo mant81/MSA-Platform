@@ -6,6 +6,8 @@ WBS 후속 구현·시험·잔여 조건은 [후속 개발 결과](docs/planning
 
 3단계 인증·보안 구현과 검증 결과는 [3단계 수행 결과](docs/planning/stage3/RESULTS.md)를 참고합니다.
 
+WBS 4.2의 중단 요청 재개는 [재개 기능 결과](docs/planning/recovery/RESULTS.md)를 참고합니다. 관리자 승인 후 원래 사용자·키·입력으로 재시도하며, 완료된 업무를 다시 실행하지 않습니다.
+
 ## 구성 서비스
 
 개발 순서와 단계별 완료 기준은 [MSA 개발 로드맵](docs/MSA_DEVELOPMENT_ROADMAP.md)을 참고합니다. Redis와 Kafka는 후속 단계에서 적용합니다.
@@ -296,3 +298,5 @@ python tools/security/start_service.py test-service
 - 이 플랫폼은 중앙 `trace-service`를 사용합니다.
 - Gateway와 모든 서비스는 trace 전파 규칙을 지켜야 합니다.
 - 내부 호출과 외부 호출 경계를 먼저 정한 뒤 클라이언트를 선택합니다.
+
+- WBS 4.5 단계 상태·기간 조회 및 완전성 사유: [구현·검증 결과](docs/planning/flow/RESULTS.md).

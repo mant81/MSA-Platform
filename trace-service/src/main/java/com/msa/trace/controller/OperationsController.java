@@ -23,8 +23,9 @@ public class OperationsController {
       @RequestParam(defaultValue = "100") int limit,
       @RequestParam(required = false) String processId,
       @RequestParam(required = false) String businessKey,
-      @RequestParam(required = false) OffsetDateTime since) {
-    return service.selectFlow(cursor, limit, processId, businessKey, since);
+      @RequestParam(required = false) OffsetDateTime since,
+      @RequestParam(required = false) OffsetDateTime until) {
+    return service.selectFlow(cursor, limit, processId, businessKey, since, until);
   }
 
   @GetMapping("/errors/{id}/causes")

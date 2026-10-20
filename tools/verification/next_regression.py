@@ -51,6 +51,12 @@ def run(ports, mode, record, verify, request):
     code,_,page=request(gw,'/operations/flows?processId='+pid+'&limit=2',headers=headers)
     verify('NEXT-FLOW-CURSOR',code==200 and len(page.get('events',[]))==2 and page.get('hasMore') and page.get('completeness')=='UNVERIFIED','flow API bounds pages and declares completeness','4.5')
     verify('NEXT-PROJECTION',any(r.get('STATUS',r.get('status'))=='SUCCEEDED' for r in page.get('projections',[])),'terminal projection agrees with committed workflow','4.5')
+    verify('NEXT-STEP-PROJECTION',len(page.get('steps',[]))==4 and all(r.get('status')=='SUCCEEDED' and r.get('attempt')==1 for r in page.get('steps',[])),'all four terminal business steps visible independently of event page','4.5')
+    verify('NEXT-COMPLETENESS-REASON',page.get('completenessDetails',{}).get('reason')=='EXPECTED_EVENT_MANIFEST_UNAVAILABLE','no completeness claim without expected event manifest','4.5')
+    code,_,window=request(gw,'/operations/flows?processId='+pid+'&since=2000-01-01T00:00:00Z&until=2001-01-01T00:00:00Z',headers=headers)
+    verify('NEXT-FLOW-WINDOW',code==200 and not window.get('events') and len(window.get('steps',[]))==4,'event-time window is separate from process projection scope','4.5')
+    code,_,_=request(gw,'/operations/flows?since=2026-01-01T00:00:00Z&until=2025-01-01T00:00:00Z',headers=headers)
+    verify('NEXT-FLOW-INVALID-WINDOW',code==400,'inverted event-time bounds rejected','4.5')
     # Interrupt collector after process begins, then verify post-recovery outbox export.
     mode['collector']='unavailable'
     outage_body={'memberNo':'EMPLOYEE-10003','memberName':'Outbox recovery','status':'ACTIVE'}
@@ -108,6 +114,9 @@ def run(ports, mode, record, verify, request):
     code,_,_=request(gw,'/members',{'memberNo':'BYPASS','memberName':'denied'},headers=user_headers)
     verify('NEXT-USER-DIRECT-WRITE-DENIED',code==403,'ordinary user signup must use trace-aware idempotent workflow','3.3')
     verify('NEXT-DEPLOYMENT-CONTEXT',bool(events) and all(e.get('environment') and e.get('instanceId') and e.get('deploymentVersion') for e in events),'process events carry environment, instance and deployment metadata','5.2')
+
+    from recovery_regression import run as recovery
+    recovery(ports,mode,verify,request,headers,user_headers,user['userId'])
 
     started=time.monotonic()
     def sample(_):

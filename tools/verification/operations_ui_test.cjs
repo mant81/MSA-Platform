@@ -21,9 +21,10 @@ async function settle(){for(let i=0;i<10;i++)await idle();}
  assert.equal(elements.get('password').value,'');assert.equal(calls[1].options.headers.Authorization,'Bearer ephemeral-access');
  assert.equal(elements.get('services').children[0].children[0].textContent,'<script>');
  assert.ok(elements.get('delivery').textContent.includes('미설정'));
- replies.push({body:{events:[{event_type:'STEP_FINISHED',status:'FAILED',trace_id:'a',span_id:'b',parent_span_id:'c',elapsed_ms:25,attempt:1}],projections:[{STATUS:'FAILED',AGGREGATE_VERSION:3}],nextCursor:3,hasMore:false}});
+ replies.push({body:{events:[{event_type:'STEP_FINISHED',status:'FAILED',trace_id:'a',span_id:'b',parent_span_id:'c',elapsed_ms:25,attempt:1}],steps:[{step_id:'CHECK_HR_EMPLOYEE',attempt:2,status:'FAILED'}],completeness:'UNVERIFIED',completenessDetails:{reason:'EXPECTED_EVENT_MANIFEST_UNAVAILABLE'},projections:[{STATUS:'FAILED',AGGREGATE_VERSION:3}],nextCursor:3,hasMore:false}});
  elements.get('process').value='process-fixture';elements.get('search').listeners.submit({preventDefault(){}});await settle();
  assert.equal(elements.get('timeline').children.length,1);assert.equal(elements.get('more').disabled,true);assert.ok(elements.get('completeness').textContent.includes('누락'));
+ assert.ok(elements.get('projection').children[1].textContent.includes('시도 2'));assert.ok(elements.get('completeness').children[0].textContent.includes('EXPECTED_EVENT_MANIFEST_UNAVAILABLE'));
  elements.get('logout').listeners.click();assert.equal(elements.get('timeline').children.length,0);
  replies.push({status:403,body:{code:'ACCESS_DENIED'}});elements.get('refresh').listeners.click();await settle();
  assert.equal(calls.at(-1).options.headers.Authorization,undefined);assert.ok(elements.get('notice').textContent.includes('권한'));

@@ -16,7 +16,7 @@ IMAGE='postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3d
 
 def main():
     name='msa-wbs-pg-'+uuid.uuid4().hex[:10];out=ROOT/'build/verification/postgres'/name;out.mkdir(parents=True)
-    port=available_ports(1)[0];password=secrets.token_urlsafe(32);env={**os.environ,'POSTGRES_PASSWORD':password,'MSA_VERIFY_PG_PASSWORD':password}
+    port=available_ports(1)[0];password=secrets.token_urlsafe(32);env={**os.environ,'POSTGRES_PASSWORD':password,'MSA_VERIFY_PG_PASSWORD':password,'MSA_VERIFY_PG_CONTAINER':name,'MSA_VERIFY_PG_LABEL':uuid.uuid4().hex}
     results=[];created=False
     def docker(*args,data=None,check=True):return subprocess.run(['docker',*args],input=data,capture_output=True,check=check,timeout=60,env=env)
     def sql(query,database='postgres'):
@@ -29,7 +29,7 @@ def main():
         raise RuntimeError('DB readiness deadline')
     def passed(id,detail):results.append({'id':id,'status':'PASS','detail':detail});print(id,'PASS',detail,flush=True)
     try:
-        docker('run','-d','--name',name,'-p',f'127.0.0.1:{port}:5432','-e','POSTGRES_PASSWORD',IMAGE);created=True;ready()
+        docker('run','-d','--name',name,'--label','codex.msa.fixture='+env['MSA_VERIFY_PG_LABEL'],'-p',f'127.0.0.1:{port}:5432','-e','POSTGRES_PASSWORD',IMAGE);created=True;ready()
         for service in ['auth','member','trace','config','hr']:sql('create database '+service+'db;')
         log=out/'application-regression.log'
         with log.open('w') as stream:

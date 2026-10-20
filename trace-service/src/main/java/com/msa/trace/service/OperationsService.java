@@ -29,6 +29,19 @@ public class OperationsService {
 
   public Map<String, Object> selectFlow(
       long cursor, int limit, String processId, String businessKey, OffsetDateTime since) {
+    return selectFlow(cursor, limit, processId, businessKey, since, null);
+  }
+
+  public Map<String, Object> selectFlow(
+      long cursor,
+      int limit,
+      String processId,
+      String businessKey,
+      OffsetDateTime since,
+      OffsetDateTime until) {
+    if (since != null && until != null && !since.isBefore(until))
+      throw new org.springframework.web.server.ResponseStatusException(
+          org.springframework.http.HttpStatus.BAD_REQUEST, "since must precede until");
     var rows =
         normalize(
             mapper.selectEvents(
@@ -36,7 +49,8 @@ public class OperationsService {
                 Math.max(1, Math.min(limit, 200)) + 1,
                 processId,
                 businessKey,
-                since));
+                since,
+                until));
     boolean more = rows.size() > Math.max(1, Math.min(limit, 200));
     if (more) rows = rows.subList(0, rows.size() - 1);
     long next = rows.isEmpty() ? cursor : ((Number) rows.getLast().get("id")).longValue();
@@ -46,7 +60,31 @@ public class OperationsService {
         processId == null
             ? java.util.List.of()
             : jdbc.queryForList("select * from flow_projection where process_id=?", processId);
+    var steps =
+        processId == null
+            ? List.<Map<String, Object>>of()
+            : normalize(
+                jdbc.queryForList(
+                    "select * from flow_step_projection where process_id=? order by"
+                        + " step_id,attempt,step_execution_id limit 201",
+                    processId));
+    boolean stepsTruncated = steps.size() > 200;
+    if (stepsTruncated) steps = steps.subList(0, 200);
     return Map.of(
+        "steps",
+        steps,
+        "completenessDetails",
+        Map.of(
+            "scope",
+            "retained-member-business-events",
+            "reason",
+            processId == null ? "PROCESS_NOT_SELECTED" : "EXPECTED_EVENT_MANIFEST_UNAVAILABLE",
+            "stepsTruncated",
+            stepsTruncated,
+            "projectionScope",
+            "all-ingested-events-for-process",
+            "eventPageFiltered",
+            since != null || until != null || businessKey != null),
         "projections",
         projections,
         "events",

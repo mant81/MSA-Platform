@@ -12,6 +12,8 @@ Java 25 / Spring Boot 4.1.1의 BOM이 관리하는 Spring Security 7.1.1을 사�
 | POST /members/signup | USER 또는 ADMIN |
 | GET /members/processes 및 하위 조회 | OPERATIONS 또는 ADMIN |
 | POST /members | ADMIN |
+| GET /members/requests 및 감사 조회 | OPERATIONS 또는 ADMIN |
+| POST /members/requests/*/allow-retry | ADMIN |
 | GET /configs | USER, OPERATIONS 또는 ADMIN |
 | POST /configs | ADMIN |
 | GET /users | ADMIN; 비밀번호/해시 제외 |

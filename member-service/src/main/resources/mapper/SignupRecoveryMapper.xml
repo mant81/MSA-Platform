@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.msa.member.mapper.SignupRecoveryMapper">
+ <select id="selectRequests" resultType="com.msa.member.vo.SignupRecoveryVo">
+ select request_key,owner_id,member_no,initial_trace_id,status,retry_count,created_at,updated_at from signup_request
+ where status in ('RECOVERY_REQUIRED','RETRY_ALLOWED') and request_key &gt; #{cursor}
+ order by request_key limit 100
+ </select>
+ <select id="selectLocked" resultType="com.msa.member.vo.SignupRecoveryVo">
+ select request_key,owner_id,member_no,initial_trace_id,status,retry_count,created_at,updated_at,
+ case when response_json is null then false else true end as has_response
+ from signup_request where request_key=#{key} for update
+ </select>
+ <select id="selectEffects" resultType="int">
+ select (select count(*) from member where member_no=#{memberNo}) +
+ (select count(*) from member_process where business_key=#{memberNo} and status='SUCCESS')
+ </select>
+ <update id="updateRetryAllowed">
+ update signup_request set status='RETRY_ALLOWED',updated_at=#{now} where request_key=#{key} and status='RECOVERY_REQUIRED' and response_json is null
+ </update>
+ <insert id="insertAudit">
+ insert into signup_recovery_audit(event_id,request_key,actor,action,reason_code,trace_id,created_at)
+ values (#{id},#{key},#{actor},#{action},#{reason},#{trace},#{now})
+ </insert>
+ <select id="selectAudit" resultType="map">
+ select event_id,actor,action,reason_code,trace_id,created_at from signup_recovery_audit
+ where request_key=#{key} order by created_at,event_id limit 100
+ </select>
+</mapper>

@@ -64,7 +64,7 @@ Auth 최초 관리자 생성이 필요하면 Auth 전용 configtree 디렉터리
 
 - 가입은 `Idempotency-Key`를 사용한다. 미입력 시 회원 번호를 사용하며 사용자별로 구분한다. 같은 키·같은 입력은 저장된 원래 응답을 반환한다. 키에 다른 입력 또는 진행 중 요청은 409다.
 - 업무 상태·단계·회원 저장·Outbox·응답이 같은 로컬 트랜잭션으로 commit된다. DB 오류는 전부 rollback한다. 외부 쓰기/보상은 이 샘플에 포함되지 않는다.
-- 최초 claim은 별도 commit된다. 5분 이상 미종료 claim은 `RECOVERY_REQUIRED`로 바뀌며 자동 재실행하지 않는다. DB 상태·진행 중 트랜잭션·외부 부작용 가능성을 확인한다. 범용 재개·보상 API는 후속이다.
+- 최초 claim은 별도 commit된다. 5분 이상 미종료 claim은 `RECOVERY_REQUIRED`로 바뀌며 자동 재실행하지 않는다. DB 상태·진행 중 트랜잭션·외부 부작용 가능성을 확인한다. 범용 중간 단계 재개·외부 보상 API는 후속이다. 아래 승인 기반 로컬 재시도 절차를 사용한다.
 - 중요한 Member 가입 이벤트는 DB Outbox에서 최대 100건씩 전송한다. 수집기가 반환한 eventId별 PERSISTED/DUPLICATE만 승인한다. 타임아웃/승인 누락/부분 처리 시 미승인 이벤트를 지수 지연(최대 60초) 후 재전송한다. 같은 `(sourceService,eventId)`는 중앙에서 한 번 저장한다.
 - Gateway/HR 요청 진단 이벤트는 유한 메모리 버퍼의 best effort다. `msa_trace_dropped`, `msa_trace_failed`와 `msa_outbox_pending`, `msa_outbox_retrying`을 확인한다. 디스크 부족 때 업무와 Outbox 원자성을 깨고 성공 처리하지 않는다.
 - 종료 응답이 없는 claim을 근거 없이 지우거나 키를 바꿔 재시도하지 않는다. 가입 샘플에는 회원 번호 unique 제약이 있으나 실제 외부 부작용까지 중복 방지하는 것은 아니다.
@@ -93,3 +93,17 @@ Trace TTL은 `APP_RETENTION_ENABLED=true`, `APP_RETENTION_TRACE_DAYS=<확정값>
 암호화·접근 제한된 저장소에 서비스별 `pg_dump -Fc`와 migration·이미지·설정 버전을 함께 보관한다. restore는 먼저 새 DB에 `pg_restore --exit-on-error`로 수행하고 데이터 수·조회·권한·업무·Outbox를 검증한다. 자동 PG 시험의 DB 계정은 격리 fixture의 postgres이며 운영 최소 권한 계정 인수를 대체하지 않는다. 이번 자동 시험은 Member DB를 별도 DB에 복원해 회원/프로세스/Outbox 수를 비교하고 DB 재시작도 확인한다.
 
 앱 롤백은 현재 이벤트/인증/DB 계약과 호환 검증한 이전 이미지로만 수행한다. 새 Outbox 이벤트를 모르는 과거 수집기로 임의 회귀하면 승인 후 metadata가 유실될 수 있다. 자동 down migration·데이터 삭제·기존 백업의 덮어쓰기는 제공하지 않는다. 운영 롤백 실연·RTO/RPO·PITR·HA·장기 보존 인수는 별도 필요하다.
+
+## 중단된 Member 가입의 승인 기반 재시도 (WBS 4.2)
+
+1. OPERATIONS/ADMIN으로 `GET /members/requests`에서 복구 대기를 확인한다. 100건씩 requestKey cursor로 읽는다. 최초 Trace, 마지막 상태, 기존 회원/성공 프로세스와 DB 복원 여부를 확인한다.
+2. 실제 진행 중 작업과 외부 쓰기 부작용이 없는지 확인한다. 자동 watchdog이 5분 경과 요청을 RECOVERY_REQUIRED로 바꾸더라도 그 표시만으로 외부 부작용 없음이 증명되지는 않는다. 이 샘플의 HR 호출은 읽기이고 Member 저장/상태/Outbox는 같은 DB 트랜잭션이다.
+3. ADMIN으로 POST `/members/requests/{requestKey}/allow-retry`를 호출한다. reasonCode는 DB_ROLLBACK_CONFIRMED 또는 PROCESS_CRASH_CONFIRMED다. 승인과 감사는 원자적이며 업무를 실행하지 않는다.
+4. 원래 사용자가 원래 Idempotency-Key·동일한 회원 정보로 POST /members/signup을 재호출한다. 다른 입력·진행 중 중복은 409다. 한 번의 재시도가 소비되고 성공/업무 거부 응답은 기존 정책대로 캐시된다. 다시 DB 오류가 나면 RECOVERY_REQUIRED로 복귀한다. 최대 실제 재시도는 3회다.
+5. request 감사에서 승인자/원래 사용자/사유/Trace/시각을 확인하고, 성공 프로세스·회원 한 건·Outbox 복구를 확인한다. 첫 시도의 Trace는 initialTraceId, 재시도 Trace는 감사 RETRY_STARTED에서 연결한다.
+
+완료 응답이 있거나 회원/성공 프로세스가 이미 있으면 승인하지 않는다. V5 이전 행의 owner/member가 없거나 한도를 소모했으면 수동 원인 분석 대상으로 남긴다. 임의 claim 삭제·입력 변경·다른 키로의 강제 재실행을 복구 절차로 사용하지 않는다. 실제 외부 부작용·이행 DB/운영 권한·인수는 별도 검증이 필요하다.
+
+### 단계 이력 확인
+
+업무 ID로 `/operations/flows`를 조회하고 `steps`의 실행 ID·시도·종료 상태를 확인한다. 목록의 `stepsTruncated`가 true이면 원본 이벤트 cursor 조회로 추가 실행을 확인한다. 기간으로 잘린 이벤트 목록과 전체 수집 projection은 범위가 다르다. 원본 이력이 보존 정책으로 삭제된 경우 projection만으로 원인이나 전체 수집을 확정하지 않는다. UNVERIFIED는 업무 실패 판정이 아니며, Member 원본 업무/Outbox 배달 상태와 대조한다. 예상 이벤트 manifest·운영 보존 이행 정책의 인수가 남아 있다.

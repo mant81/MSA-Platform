@@ -64,25 +64,53 @@ public class SignupRequestService {
       tx.executeWithoutResult(
           status ->
               jdbc.update(
-                  "insert into signup_request(request_key,fingerprint,status,created_at,updated_at)"
-                      + " values (?,?,'RUNNING',?,?)",
+                  "insert into"
+                      + " signup_request(request_key,fingerprint,status,created_at,updated_at,owner_id,member_no,initial_trace_id)"
+                      + " values (?,?,'RUNNING',?,?,?,?,?)",
                   requestKey,
                   fingerprint,
                   OffsetDateTime.now(),
-                  OffsetDateTime.now()));
+                  OffsetDateTime.now(),
+                  owner,
+                  vo.getMemberNo(),
+                  traceId));
     } catch (DuplicateKeyException duplicate) {
-      var row =
-          jdbc.queryForMap(
-              "select fingerprint,status,response_json from signup_request where request_key=?",
-              requestKey);
-      if (!fingerprint.equals(row.get("FINGERPRINT"))
-          && !fingerprint.equals(row.get("fingerprint")))
-        throw new ResponseStatusException(HttpStatus.CONFLICT, "Idempotency key payload differs");
-      Object result = row.getOrDefault("RESPONSE_JSON", row.get("response_json"));
-      if (result == null)
-        throw new ResponseStatusException(
-            HttpStatus.CONFLICT, "Request running or requires recovery");
-      return json.readValue(result.toString(), MemberSignupVo.class);
+      MemberSignupVo cached =
+          tx.execute(
+              status -> {
+                var row =
+                    jdbc.queryForMap(
+                        "select fingerprint,status,response_json,owner_id,retry_count from"
+                            + " signup_request where request_key=? for update",
+                        requestKey);
+                if (!fingerprint.equals(row.get("fingerprint")))
+                  throw new ResponseStatusException(
+                      HttpStatus.CONFLICT, "Idempotency key payload differs");
+                Object result = row.get("response_json");
+                if (result != null) return json.readValue(result.toString(), MemberSignupVo.class);
+                if (!"RETRY_ALLOWED".equals(row.get("status"))
+                    || !owner.equals(row.get("owner_id"))
+                    || ((Number) row.get("retry_count")).intValue() >= 3)
+                  throw new ResponseStatusException(
+                      HttpStatus.CONFLICT, "Request running or requires recovery");
+                jdbc.update(
+                    "update signup_request set"
+                        + " status='RUNNING',retry_count=retry_count+1,updated_at=? where"
+                        + " request_key=?",
+                    OffsetDateTime.now(),
+                    requestKey);
+                jdbc.update(
+                    "insert into"
+                        + " signup_recovery_audit(event_id,request_key,actor,action,reason_code,trace_id,created_at)"
+                        + " values (?,?,?,'RETRY_STARTED','RETRY_AUTHORIZED',?,?)",
+                    java.util.UUID.randomUUID().toString(),
+                    requestKey,
+                    owner,
+                    traceId,
+                    OffsetDateTime.now());
+                return null;
+              });
+      if (cached != null) return cached;
     }
     try {
       return tx.execute(

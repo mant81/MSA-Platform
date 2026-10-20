@@ -7,6 +7,7 @@
  <if test="processId != null">and process_id=#{processId}</if>
  <if test="businessKey != null">and process_id in (select process_id from trace_event where business_key=#{businessKey})</if>
  <if test="since != null">and created_at &gt;= #{since}</if>
+ <if test="until != null">and created_at &lt; #{until}</if>
  order by id limit #{limit}
  </select>
  <select id="selectErrors" resultType="map">

@@ -47,6 +47,7 @@ public class TraceService {
           status -> {
             int inserted = traceEventMapper.insert(vo);
             project(vo);
+            projectStep(vo);
             return inserted;
           });
     } catch (org.springframework.dao.DuplicateKeyException duplicate) {
@@ -98,6 +99,65 @@ public class TraceService {
           event.getProcessId(),
           event.getTraceId(),
           event.getBusinessKey(),
+          state,
+          event.getAggregateVersion(),
+          event.getEventId(),
+          java.time.OffsetDateTime.now());
+  }
+
+  private void projectStep(TraceEventVo event) {
+    if (!"member-service".equals(event.getSourceService())
+        || event.getProcessId() == null
+        || event.getStepId() == null
+        || event.getStepExecutionId() == null
+        || event.getAttempt() == null
+        || event.getAttempt() < 1
+        || event.getAggregateVersion() == null) return;
+    String state =
+        switch (event.getEventType()) {
+          case "STEP_STARTED" -> "RUNNING";
+          case "STEP_SUCCEEDED" -> "SUCCEEDED";
+          case "STEP_FAILED" -> "TIMEOUT".equals(event.getStatus()) ? "TIMED_OUT" : "FAILED";
+          case "STEP_NOT_EXECUTED" -> "NOT_EXECUTED";
+          default -> null;
+        };
+    if (state == null) return;
+    int changed =
+        jdbc.update(
+            "update flow_step_projection set"
+                + " status=?,aggregate_version=?,last_event_id=?,updated_at=? where"
+                + " source_service=? and process_id=? and step_id=? and step_execution_id=? and"
+                + " attempt=? and aggregate_version < ? and status='RUNNING'",
+            state,
+            event.getAggregateVersion(),
+            event.getEventId(),
+            java.time.OffsetDateTime.now(),
+            event.getSourceService(),
+            event.getProcessId(),
+            event.getStepId(),
+            event.getStepExecutionId(),
+            event.getAttempt(),
+            event.getAggregateVersion());
+    if (changed == 0
+        && jdbc.queryForObject(
+                "select count(*) from flow_step_projection where source_service=? and process_id=?"
+                    + " and step_execution_id=?",
+                Integer.class,
+                event.getSourceService(),
+                event.getProcessId(),
+                event.getStepExecutionId())
+            == 0)
+      jdbc.update(
+          "insert into flow_step_projection(source_service,process_id,step_id,step_execution_id,"
+              + "attempt,trace_id,span_id,status,aggregate_version,last_event_id,updated_at)"
+              + " values(?,?,?,?,?,?,?,?,?,?,?)",
+          event.getSourceService(),
+          event.getProcessId(),
+          event.getStepId(),
+          event.getStepExecutionId(),
+          event.getAttempt(),
+          event.getTraceId(),
+          event.getSpanId(),
           state,
           event.getAggregateVersion(),
           event.getEventId(),
