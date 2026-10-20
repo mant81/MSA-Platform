@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.msa.trace.mapper.OperationsMapper">
+ <select id="selectEvents" resultType="map">
+ select id,environment,instance_id,deployment_version,aggregate_version,step_execution_id,attempt,process_definition_version,error_id,caused_by_error_id,error_group_id,trace_id,legacy_trace_id,span_id,parent_span_id,event_id,source_service,process_id,business_key,step_id,event_type,status,elapsed_ms,error_code,error_message,created_at
+ from trace_event where id &gt; #{cursor}
+ <if test="processId != null">and process_id=#{processId}</if>
+ <if test="businessKey != null">and process_id in (select process_id from trace_event where business_key=#{businessKey})</if>
+ <if test="since != null">and created_at &gt;= #{since}</if>
+ order by id limit #{limit}
+ </select>
+ <select id="selectErrors" resultType="map">
+ select source_service,deployment_version,error_code,count(distinct coalesce(error_id,event_id,cast(id as varchar))) as occurrences,min(created_at) as first_seen,max(created_at) as last_seen,count(distinct process_id) as affected_processes
+ from trace_event where error_code is not null and created_at &gt;= #{since}
+ group by source_service,deployment_version,error_code order by max(created_at) desc limit 100
+ </select>
+ <select id="selectErrorImpact" resultType="map">
+ select id,environment,instance_id,deployment_version,aggregate_version,step_execution_id,attempt,process_definition_version,error_id,caused_by_error_id,error_group_id,trace_id,process_id,step_id,source_service,error_code,error_message,created_at
+ from trace_event where error_code=#{code} and id &gt; #{cursor} order by id limit 100
+ </select>
+</mapper>

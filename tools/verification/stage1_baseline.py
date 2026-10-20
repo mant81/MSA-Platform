@@ -52,9 +52,12 @@ def available_ports(count):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--java', default=shutil.which('java'))
+    parser.add_argument('--postgres-port', type=int, help='owned disposable PostgreSQL fixture port')
+    parser.add_argument('--next', action='store_true', help='run remaining WBS development regression')
     parser.add_argument('--stage3', action='store_true', help='run signed JWT/RBAC/service-auth/refresh security regression')
     parser.add_argument('--stage2', action='store_true', help='run Gateway/UI stage2 regression suite')
     args = parser.parse_args()
+    if args.next: args.stage3=True
     if not args.java:
         parser.error('Java 25 required; set JAVA_HOME/PATH or --java')
     java_version = subprocess.run([args.java, '-version'], capture_output=True, text=True, check=True).stderr
@@ -66,10 +69,10 @@ def main():
         if not jar.is_file():
             parser.error(f'Build the repository first: missing {jar}')
     run_id = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + uuid.uuid4().hex[:6]
-    out = ROOT / ('build/verification/stage3' if args.stage3 else 'build/verification/stage2' if args.stage2 else 'build/verification/stage1') / run_id
+    out = ROOT / ('build/verification/next' if args.next else 'build/verification/stage3' if args.stage3 else 'build/verification/stage2' if args.stage2 else 'build/verification/stage1') / run_id
     out.mkdir(parents=True)
     ports = dict(zip(services + ['fault-proxy'], available_ports(8)))
-    processes = {};logs = [];results = []
+    processes = {};logs = [];results = [];launches = {}
     sys.path.insert(0, str(ROOT / 'tools/security'))
     from prepare_local import create, environment
     security = create(out / 'security')
@@ -88,21 +91,39 @@ def main():
                     status, body = 503, {'code': 'HR_UNAVAILABLE'}
                 else:
                     mode['lastHrTraceId'] = self.headers.get('X-Trace-Id')
-                    status, _, body = request(ports['hr-service'], self.path, headers={key: self.headers[key] for key in ['X-Trace-Id', 'Authorization', 'X-Service-Id', 'X-Service-Token'] if self.headers.get(key)})
+                    mode['lastHrTraceparent'] = self.headers.get('traceparent')
+                    status, _, body = request(ports['hr-service'], self.path, headers={key: self.headers[key] for key in ['X-Trace-Id', 'traceparent', 'X-Process-Id', 'Authorization', 'X-Service-Id', 'X-Service-Token'] if self.headers.get(key)})
                 payload = json.dumps(body).encode()
                 self.send_response(status);self.send_header('Content-Type', 'application/json')
                 self.end_headers();self.wfile.write(payload)
             except (BrokenPipeError, ConnectionResetError):
                 pass
         def do_POST(self):
-            payload = json.loads(self.rfile.read(int(self.headers.get('Content-Length', 0))))
-            if mode.get('collector') == 'unavailable':
-                status, body = 503, {'code': 'COLLECTOR_UNAVAILABLE'}
-            else:
-                status, _, body = request(ports['trace-service'], self.path, payload, headers={key: self.headers[key] for key in ['X-Service-Id', 'X-Service-Token'] if self.headers.get(key)})
-            encoded = json.dumps(body).encode()
-            self.send_response(status);self.send_header('Content-Type', 'application/json')
-            self.end_headers();self.wfile.write(encoded)
+            try:
+                if self.headers.get('Transfer-Encoding', '').lower() == 'chunked':
+                    chunks = []
+                    while True:
+                        size = int(self.rfile.readline().strip().split(b';')[0], 16)
+                        if not size:
+                            self.rfile.readline();break
+                        chunks.append(self.rfile.read(size));self.rfile.read(2)
+                    raw = b''.join(chunks)
+                else:
+                    raw = self.rfile.read(int(self.headers.get('Content-Length', 0)))
+                payload = json.loads(raw)
+                if mode.get('collector') == 'unavailable':
+                    status, body = 503, {'code': 'COLLECTOR_UNAVAILABLE'}
+                else:
+                    try:
+                        status, _, body = request(ports['trace-service'], self.path, payload, headers={key: self.headers[key] for key in ['X-Service-Id', 'X-Service-Token'] if self.headers.get(key)})
+                    except OSError:
+                        status, body = 503, {'code': 'COLLECTOR_STARTING'}
+                encoded = json.dumps(body).encode()
+                self.send_response(status);self.send_header('Content-Type', 'application/json')
+                self.send_header('Content-Length',str(len(encoded)))
+                self.end_headers();self.wfile.write(encoded)
+            except (BrokenPipeError, ConnectionResetError):
+                pass
         def log_message(self, *unused):
             pass
 
@@ -122,11 +143,19 @@ def main():
         for service in services:
             flags = [f'--server.port={ports[service]}', '--server.address=127.0.0.1',
                      f'--app.trace-service-url=http://127.0.0.1:{ports["trace-service"]}']
+            if args.postgres_port and service in ['auth-service','member-service','trace-service','config-service','hr-service']:
+                database=service.removesuffix('-service')+'db'
+                flags += ['--app.database-type=POSTGRESQL',f'--app.datasource-url=jdbc:postgresql://127.0.0.1:{args.postgres_port}/{database}','--app.datasource-username=postgres']
             if service == 'member-service':
                 flags += [f'--app.hr-service-url=http://127.0.0.1:{ports["fault-proxy"]}',
                           f'--app.auth-service-url=http://127.0.0.1:{ports["auth-service"]}',
                           '--spring.cloud.openfeign.client.config.default.connectTimeout=250',
                           '--spring.cloud.openfeign.client.config.default.readTimeout=250']
+            if args.next and service == 'member-service':
+                flags = [flag for flag in flags if not flag.startswith('--app.trace-service-url=')]
+                flags += [f'--app.trace-service-url=http://127.0.0.1:{ports["fault-proxy"]}', '--app.outbox-delay-ms=200']
+            if args.next and service == 'trace-service':
+                flags += [f'--app.monitor.targets=hr-1=hr-service@http://127.0.0.1:{ports["hr-service"]},missing-1=missing-service@http://127.0.0.1:1', '--app.monitor.interval-ms=500']
             if service == 'test-service':
                 flags += [f'--app.gateway-url=http://127.0.0.1:{ports["gateway-service"]}']
             if service == 'gateway-service':
@@ -137,16 +166,20 @@ def main():
                     ('config-service', '/configs/**'), ('auth-service', '/auth/**,/users/**'),
                     ('member-service', '/members/**'), ('hr-service', '/hr/**')]
                 if args.stage2 or args.stage3:
-                    routes.append(('trace-service', '/trace-events/**'))
+                    routes.append(('trace-service', '/trace-events/**,/operations/**' if args.next else '/trace-events/**'))
                 for index, (target, pattern) in enumerate(routes):
                     prefix = f'--spring.cloud.gateway.server.webflux.routes[{index}]'
                     flags += [f'{prefix}.id={target}', f'{prefix}.uri=http://127.0.0.1:{ports[target]}',
                               f'{prefix}.predicates[0]=Path={pattern}']
                     if target == 'trace-service':
-                        flags += [f'{prefix}.predicates[1]=Method=GET']
+                        flags += [f'{prefix}.predicates[1]=Method=GET,POST' if args.next else f'{prefix}.predicates[1]=Method=GET']
             log = (out / (service + '.log')).open('w');logs.append(log)
+            service_env=environment(security,service)
+            if args.postgres_port and service in ['auth-service','member-service','trace-service','config-service','hr-service']:
+                service_env['APP_DATASOURCE_PASSWORD']=os.environ['MSA_VERIFY_PG_PASSWORD']
+            launches[service] = (service_env, log)
             processes[service] = subprocess.Popen([args.java, '-Xms32m', '-Xmx192m', '-jar', str(jars[service]), *flags],
-                cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, env=environment(security, service))
+                cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, env=service_env)
         paths = {service: ('/' if service == 'test-service' else '/actuator/health') for service in services}
         deadline = time.monotonic() + 90
         waiting = set(services)
@@ -163,7 +196,24 @@ def main():
             if time.monotonic() > deadline:
                 raise RuntimeError('Startup deadline exceeded: ' + ','.join(sorted(waiting)))
             time.sleep(.2)
-        if args.stage3:
+        def restart_member():
+            old=processes['member-service'];old.terminate();old.wait(timeout=40)
+            child_env,child_log=launches['member-service']
+            processes['member-service']=subprocess.Popen(old.args,cwd=ROOT,stdout=child_log,stderr=subprocess.STDOUT,env=child_env)
+            deadline=time.monotonic()+60
+            while time.monotonic()<deadline:
+                if processes['member-service'].poll() is not None:raise RuntimeError('Restarted Member exited')
+                try:
+                    if request(ports['member-service'],'/actuator/health',timeout=1)[0]==200:return
+                except OSError:pass
+                time.sleep(.2)
+            raise RuntimeError('Member restart readiness timeout')
+        mode['restartMember']=restart_member
+        mode['persistent']=bool(args.postgres_port)
+        if args.next:
+            from next_regression import run
+            run(ports, mode, record, verify, request)
+        elif args.stage3:
             from stage3_regression import run
             run(ports, mode, record, verify, request)
         elif args.stage2:
@@ -224,7 +274,7 @@ def main():
                         for p in ROOT.rglob('*') if p.is_file() and
                         ('build' not in p.relative_to(ROOT).parts and '.git' not in p.relative_to(ROOT).parts and
                          '.gradle' not in p.relative_to(ROOT).parts and p.suffix in ['.java', '.gradle', '.yml', '.sql', '.xml', '.py', '.json'])}
-        report = {'runId': run_id, 'environment': 'isolated-h2-local', 'productionReady': False,
+        report = {'runId': run_id, 'environment': 'isolated-postgres-local' if args.postgres_port else 'isolated-h2-local', 'productionReady': False,
                   'java': java_version.splitlines()[0], 'ports': ports,
                   'jarSha256': {s: hashlib.sha256(p.read_bytes()).hexdigest() for s, p in jars.items()},
                   'sourceSha256': fingerprints, 'results': results,

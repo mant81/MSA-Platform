@@ -1,144 +1,291 @@
 package com.msa.core;
 
 import java.time.OffsetDateTime;
+
 public class TraceEventVo {
-    private Long id;
-    private String traceId;
-    private String processId;
-    private String businessKey;
-    private String processType;
-    private String stepId;
-    private String serviceName;
-    private String sourceService;
+  private String environment;
 
-    public String getSourceService() { return sourceService; }
-    public void setSourceService(String sourceService) { this.sourceService = sourceService; }
-    private String eventType;
-    private String httpMethod;
-    private String path;
-    private String status;
-    private Long elapsedMs;
-    private String errorCode;
-    private String errorMessage;
-    private OffsetDateTime createdAt;
+  public String getEnvironment() {
+    return environment;
+  }
 
-    public Long getId() {
-        return id;
-    }
+  public void setEnvironment(String value) {
+    this.environment = value;
+  }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+  private String instanceId;
 
-    public String getTraceId() {
-        return traceId;
-    }
+  public String getInstanceId() {
+    return instanceId;
+  }
 
-    public void setTraceId(String traceId) {
-        this.traceId = traceId;
-    }
+  public void setInstanceId(String value) {
+    this.instanceId = value;
+  }
 
-    public String getProcessId() {
-        return processId;
-    }
+  private String deploymentVersion;
 
-    public void setProcessId(String processId) {
-        this.processId = processId;
-    }
+  public String getDeploymentVersion() {
+    return deploymentVersion;
+  }
 
-    public String getBusinessKey() {
-        return businessKey;
-    }
+  public void setDeploymentVersion(String value) {
+    this.deploymentVersion = value;
+  }
 
-    public void setBusinessKey(String businessKey) {
-        this.businessKey = businessKey;
-    }
+  private Long aggregateVersion;
 
-    public String getProcessType() {
-        return processType;
-    }
+  public Long getAggregateVersion() {
+    return aggregateVersion;
+  }
 
-    public void setProcessType(String processType) {
-        this.processType = processType;
-    }
+  public void setAggregateVersion(Long value) {
+    this.aggregateVersion = value;
+  }
 
-    public String getStepId() {
-        return stepId;
-    }
+  private String stepExecutionId;
 
-    public void setStepId(String stepId) {
-        this.stepId = stepId;
-    }
+  public String getStepExecutionId() {
+    return stepExecutionId;
+  }
 
-    public String getServiceName() {
-        return serviceName;
-    }
+  public void setStepExecutionId(String value) {
+    this.stepExecutionId = value;
+  }
 
-    public void setServiceName(String serviceName) {
-        this.serviceName = serviceName;
-    }
+  private Integer attempt;
 
-    public String getEventType() {
-        return eventType;
-    }
+  public Integer getAttempt() {
+    return attempt;
+  }
 
-    public void setEventType(String eventType) {
-        this.eventType = eventType;
-    }
+  public void setAttempt(Integer value) {
+    this.attempt = value;
+  }
 
-    public String getHttpMethod() {
-        return httpMethod;
-    }
+  private String processDefinitionVersion;
 
-    public void setHttpMethod(String httpMethod) {
-        this.httpMethod = httpMethod;
-    }
+  public String getProcessDefinitionVersion() {
+    return processDefinitionVersion;
+  }
 
-    public String getPath() {
-        return path;
-    }
+  public void setProcessDefinitionVersion(String value) {
+    this.processDefinitionVersion = value;
+  }
 
-    public void setPath(String path) {
-        this.path = path;
-    }
+  private String errorId;
 
-    public String getStatus() {
-        return status;
-    }
+  public String getErrorId() {
+    return errorId;
+  }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
+  public void setErrorId(String value) {
+    this.errorId = value;
+  }
 
-    public Long getElapsedMs() {
-        return elapsedMs;
-    }
+  private String causedByErrorId;
 
-    public void setElapsedMs(Long elapsedMs) {
-        this.elapsedMs = elapsedMs;
-    }
+  public String getCausedByErrorId() {
+    return causedByErrorId;
+  }
 
-    public String getErrorCode() {
-        return errorCode;
-    }
+  public void setCausedByErrorId(String value) {
+    this.causedByErrorId = value;
+  }
 
-    public void setErrorCode(String errorCode) {
-        this.errorCode = errorCode;
-    }
+  private String errorGroupId;
 
-    public String getErrorMessage() {
-        return errorMessage;
-    }
+  public String getErrorGroupId() {
+    return errorGroupId;
+  }
 
-    public void setErrorMessage(String errorMessage) {
-        this.errorMessage = errorMessage;
-    }
+  public void setErrorGroupId(String value) {
+    this.errorGroupId = value;
+  }
 
-    public OffsetDateTime getCreatedAt() {
-        return createdAt;
-    }
+  private String eventId;
 
-    public void setCreatedAt(OffsetDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
+  public String getEventId() {
+    return eventId;
+  }
+
+  public void setEventId(String value) {
+    this.eventId = value;
+  }
+
+  private String spanId;
+
+  public String getSpanId() {
+    return spanId;
+  }
+
+  public void setSpanId(String value) {
+    this.spanId = value;
+  }
+
+  private String parentSpanId;
+
+  public String getParentSpanId() {
+    return parentSpanId;
+  }
+
+  public void setParentSpanId(String value) {
+    this.parentSpanId = value;
+  }
+
+  private String legacyTraceId;
+
+  public String getLegacyTraceId() {
+    return legacyTraceId;
+  }
+
+  public void setLegacyTraceId(String value) {
+    this.legacyTraceId = value;
+  }
+
+  private Long id;
+  private String traceId;
+  private String processId;
+  private String businessKey;
+  private String processType;
+  private String stepId;
+  private String serviceName;
+  private String sourceService;
+
+  public String getSourceService() {
+    return sourceService;
+  }
+
+  public void setSourceService(String sourceService) {
+    this.sourceService = sourceService;
+  }
+
+  private String eventType;
+  private String httpMethod;
+  private String path;
+  private String status;
+  private Long elapsedMs;
+  private String errorCode;
+  private String errorMessage;
+  private OffsetDateTime createdAt;
+
+  public Long getId() {
+    return id;
+  }
+
+  public void setId(Long id) {
+    this.id = id;
+  }
+
+  public String getTraceId() {
+    return traceId;
+  }
+
+  public void setTraceId(String traceId) {
+    this.traceId = traceId;
+  }
+
+  public String getProcessId() {
+    return processId;
+  }
+
+  public void setProcessId(String processId) {
+    this.processId = processId;
+  }
+
+  public String getBusinessKey() {
+    return businessKey;
+  }
+
+  public void setBusinessKey(String businessKey) {
+    this.businessKey = businessKey;
+  }
+
+  public String getProcessType() {
+    return processType;
+  }
+
+  public void setProcessType(String processType) {
+    this.processType = processType;
+  }
+
+  public String getStepId() {
+    return stepId;
+  }
+
+  public void setStepId(String stepId) {
+    this.stepId = stepId;
+  }
+
+  public String getServiceName() {
+    return serviceName;
+  }
+
+  public void setServiceName(String serviceName) {
+    this.serviceName = serviceName;
+  }
+
+  public String getEventType() {
+    return eventType;
+  }
+
+  public void setEventType(String eventType) {
+    this.eventType = eventType;
+  }
+
+  public String getHttpMethod() {
+    return httpMethod;
+  }
+
+  public void setHttpMethod(String httpMethod) {
+    this.httpMethod = httpMethod;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  public void setPath(String path) {
+    this.path = path;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public void setStatus(String status) {
+    this.status = status;
+  }
+
+  public Long getElapsedMs() {
+    return elapsedMs;
+  }
+
+  public void setElapsedMs(Long elapsedMs) {
+    this.elapsedMs = elapsedMs;
+  }
+
+  public String getErrorCode() {
+    return errorCode;
+  }
+
+  public void setErrorCode(String errorCode) {
+    this.errorCode = errorCode;
+  }
+
+  public String getErrorMessage() {
+    return errorMessage;
+  }
+
+  public void setErrorMessage(String errorMessage) {
+    this.errorMessage = errorMessage;
+  }
+
+  public OffsetDateTime getCreatedAt() {
+    return createdAt;
+  }
+
+  public void setCreatedAt(OffsetDateTime createdAt) {
+    this.createdAt = createdAt;
+  }
 }

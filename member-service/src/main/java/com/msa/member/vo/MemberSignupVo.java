@@ -6,13 +6,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class MemberSignupVo {
-    private String processId;
-    private String processType;
-    private String traceId;
-    private String memberNo;
-    private String memberName;
-    private String status;
-    private String errorCode;
-    private String errorType;
-    private String message;
+  private String errorId;
+  private String processId;
+  private String processType;
+  private String traceId;
+  private String memberNo;
+  private String memberName;
+  private String status;
+  private String errorCode;
+  private String errorType;
+  private String message;
 }

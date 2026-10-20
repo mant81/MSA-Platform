@@ -12,7 +12,7 @@ SERVICES = ['gateway-service', 'auth-service', 'member-service', 'config-service
 TRUSTED = {
     'gateway-service': [], 'auth-service': ['gateway-service'], 'member-service': ['gateway-service'],
     'config-service': ['gateway-service'], 'hr-service': ['gateway-service', 'member-service'],
-    'trace-service': ['gateway-service', 'auth-service', 'member-service', 'config-service'],
+    'trace-service': ['gateway-service', 'auth-service', 'member-service', 'config-service', 'hr-service'],
 }
 
 def create(directory):
@@ -21,7 +21,7 @@ def create(directory):
     config_file = directory / 'fixture.json'
     if config_file.exists():
         config = json.loads(config_file.read_text())
-        if config.get('formatVersion') != 2:
+        if config.get('formatVersion') != 3:
             raise RuntimeError('Legacy local fixtures must not be overwritten; use a new ignored build directory')
         return config
     public = directory / 'public';public.mkdir(mode=0o700)
@@ -40,7 +40,7 @@ def create(directory):
                         ''.join('outbound.' + target + '=' + token + '\n' for (caller, target), token in tokens.items() if caller == name) +
                         ''.join('trusted.' + caller + '=' + tokens[(caller, name)] + '\n' for caller in TRUSTED[name]))
         file.chmod(0o600);files[name] = str(file)
-    config = {'formatVersion': 2, 'directory': str(directory), 'public': str(public), 'private': str(directory / 'current.key'),
+    config = {'formatVersion': 3, 'directory': str(directory), 'public': str(public), 'private': str(directory / 'current.key'),
               'files': files, 'adminUser': 'localadmin', 'adminPassword': secrets.token_urlsafe(24)}
     config_file.write_text(json.dumps(config));config_file.chmod(0o600)
     return config
@@ -63,7 +63,7 @@ def environment(config, service):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--directory', default=str(ROOT / 'build/security/local-v2'))
+    parser.add_argument('--directory', default=str(ROOT / 'build/security/local-v3'))
     args = parser.parse_args()
     path = Path(args.directory).resolve()
     if not path.is_relative_to(ROOT / 'build'):

@@ -8,14 +8,20 @@ Java 25 / Spring Boot 4.1.1의 BOM이 관리하는 Spring Security 7.1.1을 사�
 |---|---|
 | Gateway POST /auth/signup, /auth/login, /auth/refresh, /auth/logout | 정확한 경로만 공개, 입력/토큰 검증은 Auth |
 | Gateway 및 서비스 GET /actuator/health 와 하위 health 경로 | 최소 상태만 공개, 다른 관리 endpoint는 노출하지 않음 |
-| /members 및 /hr/employees | USER 또는 ADMIN |
+| GET /members 및 /hr/employees | USER 또는 ADMIN |
+| POST /members/signup | USER 또는 ADMIN |
+| GET /members/processes 및 하위 조회 | OPERATIONS 또는 ADMIN |
+| POST /members | ADMIN |
 | GET /configs | USER, OPERATIONS 또는 ADMIN |
 | POST /configs | ADMIN |
 | GET /users | ADMIN; 비밀번호/해시 제외 |
-| GET /trace-events 및 하위 조회 | OPERATIONS 또는 ADMIN |
+| GET /trace-events, /operations 및 하위 조회 | OPERATIONS 또는 ADMIN |
+| POST /operations/incidents/*/ack | OPERATIONS 또는 ADMIN |
+| POST /operations/services/*/maintenance | ADMIN |
+| GET /actuator/prometheus | OPERATIONS 또는 ADMIN; backend는 서비스 인증 추가 |
 | 외부 POST /trace-events, 미등록 경로·관리 쓰기 | 거부 |
 | 개별 업무 서비스 | 유효한 호출 서비스 자격증명 + 해당 사용자 JWT/권한 모두 필요 |
-| 내부 POST /trace-events | 허용된 수집 발행자 자격증명 필요, 사용자 JWT는 요구하지 않음 |
+| 내부 POST /trace-events 및 /trace-events/batch | 허용된 수집 발행자 자격증명 필요, 사용자 JWT는 요구하지 않음 |
 
 공개 가입은 USER만 생성한다. role/status/passwordHash 입력으로 권한을 부여할 수 없으며 기존 POST /users 쓰기 API는 제거했다. OPERATIONS 발급은 운영에서 통제한 역할 프로비저닝이 필요하다. 별도 역할 관리 API나 SSO/OTP는 추가하지 않았다.
 
@@ -72,7 +78,7 @@ trusted.<허용된 호출 서비스명>=<그 호출자의 비밀값>
 |---|---|
 | Auth, Member, Config | Gateway |
 | HR | Gateway 또는 Member, 사용자 JWT도 검증 |
-| Trace | Gateway 조회/발행, Auth/Member/Config는 POST /trace-events 발행만 |
+| Trace | Gateway 조회/발행, Auth/Member/Config/HR는 POST /trace-events 또는 /trace-events/batch 발행만 |
 
 Trace 저장의 sourceService는 인증 필터가 확정한 서버 내부 request attribute에서 부여한다. payload의 동일 필드는 덮어쓴다. 기존 serviceName은 업무 단계의 대상 등 메타데이터이며 인증 주체와 구분한다.
 
@@ -104,7 +110,7 @@ python tools/verification/stage1_baseline.py --stage3 --java "$JAVA_HOME/bin/jav
 
 start_service.py는 foreground에서 Java로 exec하며 프로세스별 자격증명과 공개키를 주입한다. Auth에만 개인키/개발 관리자 bootstrap을 전달한다. 기존 터미널에서 직접 gradlew bootRun을 실행하려면 위 환경 설정을 별도로 주입해야 한다.
 
-실행 도구는 Python 3.10 이상·OpenSSL 실행 파일·Java 25가 필요하다. prepare_local.py는 ignored build/security/local-v2 아래의 권한 700 디렉터리와 600 개인키/자격증명 파일을 사용한다. 기존 완성 fixture는 재사용한다. 개발 관리자 정보는 같은 디렉터리의 fixture.json에만 보관하며 채팅·로그에 출력하지 않는다. 파일을 지우면 키/자격증명이 바뀌므로 모든 개발 서비스를 같은 fixture로 재시작해야 한다. 이것은 운영 Secret 발급 기능이 아니다.
+실행 도구는 Python 3.10 이상·OpenSSL 실행 파일·Java 25가 필요하다. prepare_local.py는 ignored build/security/local-v3 아래의 권한 700 디렉터리와 600 개인키/자격증명 파일을 사용한다. 기존 완성 fixture는 재사용한다. 개발 관리자 정보는 같은 디렉터리의 fixture.json에만 보관하며 채팅·로그에 출력하지 않는다. 파일을 지우면 키/자격증명이 바뀌므로 모든 개발 서비스를 같은 fixture로 재시작해야 한다. 이것은 운영 Secret 발급 기능이 아니다.
 
 UI는 Access/Refresh를 페이지 메모리에만 두며 새로고침 시 재로그인한다. 토큰 응답은 no-store이고 공개 인증/갱신/로그아웃에는 오래된 Authorization을 전달하지 않는다. UI의 토큰 표시 기능은 테스트 용도다. 운영 BFF/HttpOnly cookie 설계·XSS/CSP 점검·TLS·Rate Limit과 보안 인수는 별도로 필요하다.
 
@@ -113,3 +119,8 @@ UI는 Access/Refresh를 페이지 메모리에만 두며 새로고침 시 재로
 현재 범위는 H2 기반 샘플 검증이다. 운영 DB migration·감사/Refresh 데이터 보존·만료 행 정리·백업/복구·HA·Secret 배포·전문 보안 점검은 WBS 4/8/9번에 남는다. 기존 비H2 DB 설정의 하드코딩된 주소/샘플 계정도 운영 사용 전에 외부화해야 한다.
 
 운영 가용성/SLO·RTO/RPO·키 관리 책임자·보안/업무 인수자가 미확정이므로 전체 차세대 운영 도입 가능으로 판정하지 않는다.
+
+
+후속 개발에서는 HR의 진단 Trace 쓰기와 `/trace-events/batch`, OPERATIONS/ADMIN의 `/operations/**` 조회·ACK, ADMIN의 정비 변경을 추가했다. 동일한 수신 대상별 인증과 JWT/RBAC 경계를 유지한다. v3 개발 자격증명을 사용하며 과거 v2 파일을 자동 덮어쓰지 않는다. 상세 실행·배포 조건은 [운영 runbook](../operations/RUNBOOK.md)을 따른다.
+
+후속 권한 검토에서 Member의 `/members/processes` 및 하위 조회도 OPERATIONS/ADMIN으로 제한했다. 일반 사용자의 단순 POST `/members`는 거부하고 추적·중복 방지가 있는 `/members/signup`을 사용한다. Gateway와 backend에서 같은 경계를 적용한다.

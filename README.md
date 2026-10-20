@@ -2,6 +2,8 @@
 
 MSA PLATFORM은 Spring Boot 4.1.1, Java 25, Gradle 9.8.2 기반의 트레이스 중심 MSA 샘플 플랫폼입니다.
 
+WBS 후속 구현·시험·잔여 조건은 [후속 개발 결과](docs/planning/continuation/RESULTS.md), [운영 runbook](docs/operations/RUNBOOK.md), [운영 API](docs/operations/API.md)를 참고합니다.
+
 3단계 인증·보안 구현과 검증 결과는 [3단계 수행 결과](docs/planning/stage3/RESULTS.md)를 참고합니다.
 
 ## 구성 서비스
@@ -41,8 +43,8 @@ Gateway·회원가입·UI 연결 복구 및 장애 회귀 검증은 [2단계 수
   - 다른 시스템과 포맷이 달라도 되도록 별도 계약으로 분리합니다.
 - `auth-service`
   - 회원가입과 로그인, JWT 발급을 담당합니다.
-  - H2 메모리 DB에 실제 저장하고 조회합니다.
-  - 서비스 재시작 시 데이터가 초기화되므로 다시 가입해야 합니다.
+  - 기본 H2 메모리 DB에 저장하며, persistent profile에서 H2 파일/PostgreSQL을 사용합니다.
+  - 기본 메모리 모드는 재시작 시 초기화됩니다. 영속 모드는 데이터를 유지합니다.
 - `config-service`
   - 설정 조회와 설정 저장을 담당합니다.
 - `test-service`
@@ -58,7 +60,7 @@ Gateway·회원가입·UI 연결 복구 및 장애 회귀 검증은 [2단계 수
 - 코드는 단순하게 유지합니다.
 - DTO는 요청이 없으면 추가하지 않습니다.
 - 기본 DB는 H2입니다.
-- DB 종류는 서비스별 설정 `app.database-type`으로 선택합니다.
+- DB 드라이버는 서비스별 `app.datasource-url`의 JDBC URL로 선택합니다. 영속 모드는 `persistent` profile과 `DB_URL`/`DB_USER`/`DB_PASSWORD`를 사용합니다.
 
 ## 개발 방식
 이 프로젝트는 `my_harness` 가이드의 원칙을 따릅니다.
@@ -286,9 +288,9 @@ python tools/security/start_service.py member-service
 python tools/security/start_service.py test-service
 ```
 
-개발 관리자 자격증명과 키는 ignored build/security/local-v2에만 생성되며 출력하지 않습니다. 운영 설정은 [보안 기준](docs/security/SECURITY_BASELINE.md)을 따릅니다. Refresh/로그아웃 및 권한 검증을 포함한 격리 회귀는 `python tools/verification/stage1_baseline.py --stage3 --java "$JAVA_HOME/bin/java"`로 실행합니다.
+개발 관리자 자격증명과 키는 ignored build/security/local-v3에만 생성되며 출력하지 않습니다. 운영 설정은 [보안 기준](docs/security/SECURITY_BASELINE.md)을 따릅니다. Refresh/로그아웃 및 권한 검증을 포함한 격리 회귀는 `python tools/verification/stage1_baseline.py --next --java "$JAVA_HOME/bin/java"`로 실행합니다.
 
-라이브러리 버전은 루트 `build.gradle`의 Spring Boot / Spring Cloud BOM에서 관리합니다. MyBatis 4.1.0과 Lombok 1.18.48을 사용합니다. H2는 메모리 DB이므로 서비스 재시작 시 데이터가 초기화됩니다.
+라이브러리 버전은 루트 `build.gradle`의 Spring Boot / Spring Cloud BOM에서 관리합니다. MyBatis 4.1.0과 Lombok 1.18.48을 사용합니다. 기본 H2 메모리 모드는 재시작 시 초기화됩니다. H2 파일/PostgreSQL 영속 모드는 Flyway migration을 적용하고 데이터를 유지합니다.
 
 ## 주의 사항
 - 이 플랫폼은 중앙 `trace-service`를 사용합니다.

@@ -16,7 +16,7 @@ def main():
     jar = ROOT / args.service / 'build/libs' / (args.service + '-0.1.0.jar')
     if not java or not jar.exists():
         parser.error('Install Java 25 and build the repository first')
-    config = create(ROOT / 'build/security/local-v2')
+    config = create(ROOT / 'build/security/local-v3')
     command = [java, '-Xms64m', '-Xmx256m', '-jar', str(jar)]
     if args.port is not None:
         command.append('--server.port=' + str(args.port))

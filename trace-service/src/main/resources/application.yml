@@ -8,7 +8,7 @@ spring:
     password:
   sql:
     init:
-      mode: always
+      mode: never
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
@@ -23,14 +23,26 @@ app:
   datasource-password:
 
 server:
+  shutdown: graceful
   address: 127.0.0.1
   port: 8090
 
 management:
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState

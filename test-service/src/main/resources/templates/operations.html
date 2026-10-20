@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MSA 운영 현황</title><link rel="stylesheet" href="/css/operations.css"></head>
+<body><header><div><span class="eyebrow">MSA PLATFORM</span><h1>운영 현황</h1></div><a href="/">샘플 테스트</a></header>
+<main><section class="panel"><h2>운영자 로그인</h2><form id="login"><label>아이디 <input id="operator" autocomplete="username" required></label>
+<label>비밀번호 <input id="password" type="password" autocomplete="current-password" required></label><button>로그인</button><button type="button" id="logout">로그아웃</button></form>
+<p id="session" role="status">OPERATIONS 또는 ADMIN 권한으로 로그인하세요.</p></section>
+<p id="notice" role="alert"></p><nav><button id="refresh">현황 새로고침</button><span id="observed"></span></nav>
+<section class="panel"><h2>서비스 상태</h2><p>UP 정상 · DEGRADED 저하 · DOWN 장애 · UNKNOWN 미관측</p><div id="services" class="cards"></div><div class="scroll"><table><thead><tr><th>서비스 / 인스턴스</th><th>상태</th><th>최근 점검</th><th>판정 근거</th></tr></thead><tbody id="instances"></tbody></table></div></section>
+<section class="panel"><h2>장애 및 알림</h2><p id="delivery"></p><div id="incidents"></div></section>
+<section class="panel"><h2>오류 그룹</h2><div id="errors"></div><h3>영향 업무</h3><div id="impact"></div></section>
+<section class="panel"><h2>업무 흐름</h2><form id="search"><label>Process ID <input id="process" maxlength="100"></label><button>조회</button></form>
+<p id="completeness"></p><div id="projection"></div><div class="scroll"><table><thead><tr><th>단계 / 이벤트</th><th>상태</th><th>서비스</th><th>소요 시간</th><th>연결</th></tr></thead><tbody id="timeline"></tbody></table></div><button id="more">다음 페이지</button></section>
+</main><script src="/js/operations.js"></script></body></html>

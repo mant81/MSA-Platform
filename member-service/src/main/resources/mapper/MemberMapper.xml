@@ -58,9 +58,9 @@
 
     <insert id="insertProcessStep" parameterType="com.msa.member.vo.MemberProcessStepVo" useGeneratedKeys="true" keyProperty="id">
         insert into member_process_step
-        (process_id, step_id, step_name, service_name, status, start_time, end_time, elapsed_ms, error_code, error_type, error_message)
+        (span_id,step_execution_id,attempt,process_id, step_id, step_name, service_name, status, start_time, end_time, elapsed_ms, error_code, error_type, error_message)
         values
-        (#{processId}, #{stepId}, #{stepName}, #{serviceName}, #{status}, #{startTime}, #{endTime}, #{elapsedMs}, #{errorCode}, #{errorType}, #{errorMessage})
+        (#{spanId},#{stepExecutionId},#{attempt},#{processId}, #{stepId}, #{stepName}, #{serviceName}, #{status}, #{startTime}, #{endTime}, #{elapsedMs}, #{errorCode}, #{errorType}, #{errorMessage})
     </insert>
 
     <update id="updateProcessStep" parameterType="com.msa.member.vo.MemberProcessStepVo">
@@ -76,7 +76,7 @@
     </update>
 
     <select id="selectProcessSteps" parameterType="string" resultType="com.msa.member.vo.MemberProcessStepVo">
-        select id, process_id as processId, step_id as stepId, step_name as stepName,
+        select id,span_id,step_execution_id,attempt,process_id as processId, step_id as stepId, step_name as stepName,
                service_name as serviceName, status, start_time as startTime, end_time as endTime,
                elapsed_ms as elapsedMs, error_code as errorCode, error_type as errorType,
                error_message as errorMessage

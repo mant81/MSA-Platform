@@ -1,0 +1,10 @@
+{
+  "results": [
+    {
+      "id": "V3-LAUNCHER",
+      "status": "PASS",
+      "detail": "Foreground launcher uses v3 fixture, readiness UP and unauthenticated operations 401"
+    }
+  ],
+  "productionReady": false
+}

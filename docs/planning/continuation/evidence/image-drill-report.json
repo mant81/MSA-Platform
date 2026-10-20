@@ -1,0 +1,40 @@
+{
+  "recordedAt": "2026-10-20T09:01:34.761638+00:00",
+  "results": [
+    {
+      "id": "IMAGE-BUILD",
+      "status": "PASS",
+      "detail": "Java 25 runtime digest pinned; image defaults to UID/GID 10001"
+    },
+    {
+      "id": "IMAGE-READINESS",
+      "status": "PASS",
+      "detail": "Read-only, capability-free non-root container reports readiness UP"
+    },
+    {
+      "id": "IMAGE-BATCH",
+      "status": "PASS",
+      "detail": "Authenticated batch ingestion persists once and acknowledges duplicate event IDs"
+    },
+    {
+      "id": "IMAGE-READ",
+      "status": "PASS",
+      "detail": "RS256 operations JWT plus target credentials read persisted event"
+    },
+    {
+      "id": "IMAGE-AUTH",
+      "status": "PASS",
+      "detail": "Direct unauthenticated operations access rejected"
+    },
+    {
+      "id": "IMAGE-SHUTDOWN",
+      "status": "PASS",
+      "detail": "SIGTERM completes graceful HTTP shutdown"
+    }
+  ],
+  "productionReady": false,
+  "limitations": [
+    "Fixture uses host non-root UID for private bind mount access",
+    "Compose deployment/TLS/production secret permissions remain unaccepted"
+  ]
+}

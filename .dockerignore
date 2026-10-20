@@ -1,0 +1,7 @@
+**
+!*-service/
+!*-service/build/
+!*-service/build/libs/
+!*-service/build/libs/*-0.1.0.jar
+!deploy/
+!deploy/Dockerfile

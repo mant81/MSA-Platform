@@ -31,3 +31,14 @@ coverage/
 # Local files
 .env
 .env.*
+
+# Persistent databases and private backups
+data/
+**/data/
+*.mv.db
+*.trace.db
+*.dump
+
+# Python verification caches
+__pycache__/
+*.py[cod]

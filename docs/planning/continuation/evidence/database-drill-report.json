@@ -1,0 +1,32 @@
+{
+  "recordedAt": "2026-10-20T09:00:46.086531+00:00",
+  "image": "postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+  "results": [
+    {
+      "id": "PG-APP",
+      "status": "PASS",
+      "detail": "All seven applications and Gateway-first regression executed against five PostgreSQL databases"
+    },
+    {
+      "id": "PG-RESTORE",
+      "status": "PASS",
+      "detail": "Dump restored to a new database; member/process/outbox counts match"
+    },
+    {
+      "id": "PG-RESTART",
+      "status": "PASS",
+      "detail": "Business state and pending/delivered outbox rows survived PostgreSQL restart"
+    },
+    {
+      "id": "PG-MIGRATIONS",
+      "status": "PASS",
+      "detail": "Flyway history present for all five service-owned databases"
+    }
+  ],
+  "cleanup": "owned container/anonymous volume removed",
+  "productionReady": false,
+  "limitations": [
+    "No production RTO/RPO acceptance",
+    "No HA or operational security acceptance"
+  ]
+}

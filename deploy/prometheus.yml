@@ -1,0 +1,14 @@
+# Supply the target-specific X-Service-Id, X-Service-Token and an expiring OPERATIONS JWT
+# using a trusted scrape proxy/secret injector. Never put them in this versioned file.
+# Gateway itself accepts a JWT directly; its credential file is rotated externally.
+scrape_configs:
+  - job_name: msa-gateway
+    metrics_path: /actuator/prometheus
+    scrape_interval: 15s
+    authorization:
+      type: Bearer
+      credentials_file: /run/secrets/operations_access_jwt
+    static_configs:
+      - targets: [gateway-service:8080]
+rule_files:
+  - /etc/prometheus/rules.yml

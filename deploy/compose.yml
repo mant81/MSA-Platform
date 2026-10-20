@@ -1,0 +1,200 @@
+name: msa-platform
+x-runtime: &runtime
+  restart: unless-stopped
+  read_only: true
+  tmpfs:
+    - /tmp:size=128m,mode=1777
+  security_opt:
+    - no-new-privileges:true
+  cap_drop: [ALL]
+  mem_limit: 512m
+  stop_grace_period: 35s
+  networks: [backend]
+services:
+  postgres:
+    image: postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_admin_password
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./postgres-init.sh:/docker-entrypoint-initdb.d/01-services.sh:ro
+      - ${MSA_SECRETS_DIR:?set MSA_SECRETS_DIR}/postgres_admin_password:/run/secrets/postgres_admin_password:ro
+      - ${MSA_SECRETS_DIR:?set MSA_SECRETS_DIR}/db:/run/secrets/db:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 2s
+      retries: 20
+    restart: unless-stopped
+    networks: [backend]
+  trace-service:
+    <<: *runtime
+    image: msa/trace-service:${IMAGE_TAG:?set immutable IMAGE_TAG}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MSA_INSTANCE_ID: "trace-1"
+      MSA_DEPLOYMENT_VERSION: "${IMAGE_TAG}"
+      MSA_ENVIRONMENT: "${MSA_ENVIRONMENT:-development}"
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      SPRING_PROFILES_ACTIVE: "persistent"
+      DB_TYPE: "POSTGRESQL"
+      DB_URL: "jdbc:postgresql://postgres:5432/tracedb"
+      DB_USER: "trace"
+      SPRING_CONFIG_IMPORT: "configtree:/run/db/"
+      MSA_SERVICE_CREDENTIALS_FILE: "/run/secrets/service.properties"
+      MSA_JWT_PUBLIC_KEY_DIRECTORY: "/run/keys/public"
+      APP_MONITOR_TARGETS: "gateway-1=gateway-service@http://gateway-service:8080,auth-1=auth-service@http://auth-service:8080,member-1=member-service@http://member-service:8080,hr-1=hr-service@http://hr-service:8080,config-1=config-service@http://config-service:8080,trace-1=trace-service@http://trace-service:8080"
+    volumes:
+      - ${MSA_SECRETS_DIR}/trace-service.properties:/run/secrets/service.properties:ro
+      - ${MSA_SECRETS_DIR}/public:/run/keys/public:ro
+      - ${MSA_SECRETS_DIR}/db/trace:/run/db:ro
+  auth-service:
+    <<: *runtime
+    image: msa/auth-service:${IMAGE_TAG:?set immutable IMAGE_TAG}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MSA_INSTANCE_ID: "auth-1"
+      MSA_DEPLOYMENT_VERSION: "${IMAGE_TAG}"
+      MSA_ENVIRONMENT: "${MSA_ENVIRONMENT:-development}"
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      SPRING_PROFILES_ACTIVE: "persistent"
+      DB_TYPE: "POSTGRESQL"
+      DB_URL: "jdbc:postgresql://postgres:5432/authdb"
+      DB_USER: "auth"
+      SPRING_CONFIG_IMPORT: "configtree:/run/db/"
+      MSA_SERVICE_CREDENTIALS_FILE: "/run/secrets/service.properties"
+      MSA_JWT_PUBLIC_KEY_DIRECTORY: "/run/keys/public"
+      MSA_JWT_PRIVATE_KEY_FILE: "/run/keys/private/current.key"
+      MSA_JWT_KEY_ID: "current"
+      APP_TRACE_SERVICE_URL: "http://trace-service:8080"
+    volumes:
+      - ${MSA_SECRETS_DIR}/auth-service.properties:/run/secrets/service.properties:ro
+      - ${MSA_SECRETS_DIR}/public:/run/keys/public:ro
+      - ${MSA_SECRETS_DIR}/db/auth:/run/db:ro
+      - ${MSA_SECRETS_DIR}/current.key:/run/keys/private/current.key:ro
+  config-service:
+    <<: *runtime
+    image: msa/config-service:${IMAGE_TAG:?set immutable IMAGE_TAG}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MSA_INSTANCE_ID: "config-1"
+      MSA_DEPLOYMENT_VERSION: "${IMAGE_TAG}"
+      MSA_ENVIRONMENT: "${MSA_ENVIRONMENT:-development}"
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      SPRING_PROFILES_ACTIVE: "persistent"
+      DB_TYPE: "POSTGRESQL"
+      DB_URL: "jdbc:postgresql://postgres:5432/configdb"
+      DB_USER: "config"
+      SPRING_CONFIG_IMPORT: "configtree:/run/db/"
+      MSA_SERVICE_CREDENTIALS_FILE: "/run/secrets/service.properties"
+      MSA_JWT_PUBLIC_KEY_DIRECTORY: "/run/keys/public"
+      APP_TRACE_SERVICE_URL: "http://trace-service:8080"
+    volumes:
+      - ${MSA_SECRETS_DIR}/config-service.properties:/run/secrets/service.properties:ro
+      - ${MSA_SECRETS_DIR}/public:/run/keys/public:ro
+      - ${MSA_SECRETS_DIR}/db/config:/run/db:ro
+  hr-service:
+    <<: *runtime
+    image: msa/hr-service:${IMAGE_TAG:?set immutable IMAGE_TAG}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MSA_INSTANCE_ID: "hr-1"
+      MSA_DEPLOYMENT_VERSION: "${IMAGE_TAG}"
+      MSA_ENVIRONMENT: "${MSA_ENVIRONMENT:-development}"
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      SPRING_PROFILES_ACTIVE: "persistent"
+      DB_TYPE: "POSTGRESQL"
+      DB_URL: "jdbc:postgresql://postgres:5432/hrdb"
+      DB_USER: "hr"
+      SPRING_CONFIG_IMPORT: "configtree:/run/db/"
+      MSA_SERVICE_CREDENTIALS_FILE: "/run/secrets/service.properties"
+      MSA_JWT_PUBLIC_KEY_DIRECTORY: "/run/keys/public"
+    volumes:
+      - ${MSA_SECRETS_DIR}/hr-service.properties:/run/secrets/service.properties:ro
+      - ${MSA_SECRETS_DIR}/public:/run/keys/public:ro
+      - ${MSA_SECRETS_DIR}/db/hr:/run/db:ro
+  member-service:
+    <<: *runtime
+    image: msa/member-service:${IMAGE_TAG:?set immutable IMAGE_TAG}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MSA_INSTANCE_ID: "member-1"
+      MSA_DEPLOYMENT_VERSION: "${IMAGE_TAG}"
+      MSA_ENVIRONMENT: "${MSA_ENVIRONMENT:-development}"
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      SPRING_PROFILES_ACTIVE: "persistent"
+      DB_TYPE: "POSTGRESQL"
+      DB_URL: "jdbc:postgresql://postgres:5432/memberdb"
+      DB_USER: "member"
+      SPRING_CONFIG_IMPORT: "configtree:/run/db/"
+      MSA_SERVICE_CREDENTIALS_FILE: "/run/secrets/service.properties"
+      MSA_JWT_PUBLIC_KEY_DIRECTORY: "/run/keys/public"
+      APP_TRACE_SERVICE_URL: "http://trace-service:8080"
+      APP_HR_SERVICE_URL: "http://hr-service:8080"
+      APP_AUTH_SERVICE_URL: "http://auth-service:8080"
+    volumes:
+      - ${MSA_SECRETS_DIR}/member-service.properties:/run/secrets/service.properties:ro
+      - ${MSA_SECRETS_DIR}/public:/run/keys/public:ro
+      - ${MSA_SECRETS_DIR}/db/member:/run/db:ro
+  gateway-service:
+    <<: *runtime
+    image: msa/gateway-service:${IMAGE_TAG:?set immutable IMAGE_TAG}
+    ports: ["127.0.0.1:8080:8080"]
+    environment:
+      MSA_INSTANCE_ID: "gateway-1"
+      MSA_DEPLOYMENT_VERSION: "${IMAGE_TAG}"
+      MSA_ENVIRONMENT: "${MSA_ENVIRONMENT:-development}"
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      MSA_SERVICE_CREDENTIALS_FILE: "/run/secrets/service.properties"
+      MSA_JWT_PUBLIC_KEY_DIRECTORY: "/run/keys/public"
+      APP_TRACE_SERVICE_URL: "http://trace-service:8080"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_ID: "config-service"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_URI: "http://config-service:8080"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_0_PREDICATES_0: "Path=/configs/**"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_ID: "auth-service"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_URI: "http://auth-service:8080"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_1_PREDICATES_0: "Path=/auth/**,/users/**"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_ID: "member-service"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_URI: "http://member-service:8080"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_2_PREDICATES_0: "Path=/members/**"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_ID: "hr-service"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_URI: "http://hr-service:8080"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_3_PREDICATES_0: "Path=/hr/**"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_4_ID: "trace-service"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_4_URI: "http://trace-service:8080"
+      SPRING_CLOUD_GATEWAY_SERVER_WEBFLUX_ROUTES_4_PREDICATES_0: "Path=/trace-events/**,/operations/**"
+    volumes:
+      - ${MSA_SECRETS_DIR}/gateway-service.properties:/run/secrets/service.properties:ro
+      - ${MSA_SECRETS_DIR}/public:/run/keys/public:ro
+  test-service:
+    <<: *runtime
+    image: msa/test-service:${IMAGE_TAG:?set immutable IMAGE_TAG}
+    ports: ["127.0.0.1:8085:8080"]
+    environment:
+      MSA_INSTANCE_ID: "test-1"
+      MSA_DEPLOYMENT_VERSION: "${IMAGE_TAG}"
+      MSA_ENVIRONMENT: "${MSA_ENVIRONMENT:-development}"
+      SERVER_ADDRESS: "0.0.0.0"
+      SERVER_PORT: "8080"
+      APP_GATEWAY_URL: "http://gateway-service:8080"
+networks:
+  backend:
+volumes:
+  pgdata:

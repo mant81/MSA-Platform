@@ -39,8 +39,8 @@ def run(ports, mode, record, verify, request):
                f'UI→Gateway signup HTTP {code}, error={body.get("errorCode")}, Trace ID preserved')
         if not body.get('processId'):
             record('STATE-' + label, 'FAIL', 'processId missing');continue
-        _, _, process = request(gw, '/members/processes/' + body['processId'], headers=headers)
-        _, _, steps = request(gw, '/members/processes/' + body['processId'] + '/steps', headers=headers)
+        _, _, process = request(gw, '/members/processes/' + body['processId'], headers=operations_headers)
+        _, _, steps = request(gw, '/members/processes/' + body['processId'] + '/steps', headers=operations_headers)
         verify('STATE-' + label, process.get('status') == ('SUCCESS' if expected_code == 200 else 'FAILED')
                and all(step['status'] != 'RUNNING' for step in steps), 'process and started steps terminal')
         verify('HR-HEADER-' + label, mode.get('lastHrTraceId') == id, 'same X-Trace-Id reached HR boundary')
@@ -64,8 +64,8 @@ def run(ports, mode, record, verify, request):
         verify('HR-FAULT-' + fault, code == expected_code and body.get('errorCode') == expected_error,
                f'HTTP {code}, error={body.get("errorCode")}')
         if body.get('processId'):
-            _, _, process = request(gw, '/members/processes/' + body['processId'], headers=headers)
-            _, _, steps = request(gw, '/members/processes/' + body['processId'] + '/steps', headers=headers)
+            _, _, process = request(gw, '/members/processes/' + body['processId'], headers=operations_headers)
+            _, _, steps = request(gw, '/members/processes/' + body['processId'] + '/steps', headers=operations_headers)
             verify('FAULT-STATE-' + fault, process.get('status') == 'FAILED' and process.get('errorCode') == expected_error
                    and all(s['status'] != 'RUNNING' for s in steps), 'no process/step left RUNNING')
         else:

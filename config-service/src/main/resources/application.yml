@@ -8,7 +8,7 @@ spring:
     password:
   sql:
     init:
-      mode: always
+      mode: never
 
 app:
   database-type: H2
@@ -24,14 +24,26 @@ mybatis:
     map-underscore-to-camel-case: true
 
 server:
+  shutdown: graceful
   address: 127.0.0.1
   port: 8081
 
 management:
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,prometheus
   endpoint:
     health:
       show-details: never
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: readinessState,db
+        liveness:
+          include: livenessState
